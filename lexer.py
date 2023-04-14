@@ -22,7 +22,8 @@ class TokenType(Enum):
     EOF = auto()
 
 KEYWORDS = {
-    "let": TokenType.LET
+    "let": TokenType.LET,
+    "mod": TokenType.BINARY_OPERATOR
 }
 
 
@@ -71,7 +72,7 @@ def tokenize(sourceCode: str) -> List[Token]:
             elif is_skippable(src[0]):
                 src.pop(0)
             else:
-                raise TokenError(f"Token Error at >{src[0]}<")
+                raise TokenError(f"Token Error found at >{src[0]}< during lexing")
 
     tokens.append(Token("EndOfFile", TokenType.EOF))
     return tokens
