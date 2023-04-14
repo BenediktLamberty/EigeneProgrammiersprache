@@ -8,13 +8,18 @@ class TokenError(Exception):
     pass
 
 class TokenType(Enum):
+    # literal
     NUMBER = auto()
     IDENTIFYER = auto()
+    # sonderzeichen
     EQUALS = auto()
     OPEN_PAREN = auto()
     CLOSE_PAREN = auto()
     BINARY_OPERATOR = auto()
+    # keywords
     LET = auto()
+    # end of file
+    EOF = auto()
 
 KEYWORDS = {
     "let": TokenType.LET
@@ -68,7 +73,7 @@ def tokenize(sourceCode: str) -> List[Token]:
             else:
                 raise TokenError(f"Token Error at >{src[0]}<")
 
-            
+    tokens.append(Token("EndOfFile", TokenType.EOF))
     return tokens
 
 
