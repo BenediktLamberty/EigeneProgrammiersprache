@@ -4,20 +4,14 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import List, Tuple
 
-# class NodeType(Enum):
-#     PROGRAM = "Program"
-#     NUMERIC_LITERAL = "NumericLiteral"
-#     IDENTIFIER = "Identifier"
-#     BINARY_EXPR = "BinaryExpr"
+
 
 @dataclass
 class Stmt(ABC):
-    #kind: NodeType
     pass
 
 @dataclass
 class Program(Stmt):
-    #kind: NodeType.PROGRAM
     body: List[Stmt]
 
 @dataclass
@@ -25,18 +19,49 @@ class Expr(Stmt, ABC):
     pass
 
 @dataclass
+class VarDecl(Stmt):
+    const: bool
+    identifier: str
+    value: Expr
+
+@dataclass
 class BinaryExpr(Expr):
-    #kind: NodeType.BINARY_EXPR
     left: Expr
     right: Expr
     operator: str
 
 @dataclass
 class Identifier(Expr):
-    #kind: NodeType.IDENTIFIER
     symbol: str
 
 @dataclass
 class NumericLiteral(Expr):
-    #kind: NodeType.NUMERIC_LITERAL
     value: float
+
+@dataclass
+class NullLiteral(Expr):
+    pass
+
+@dataclass
+class AssignmentExpr(Expr):
+    assigne: Expr
+    value: Expr
+
+@dataclass
+class Property(Expr):
+    arg: Expr
+    value: Expr
+
+@dataclass
+class Map(Expr):
+    properties: List[Property]
+
+@dataclass
+class CallExpr(Expr):
+    args = List[Expr]
+    caller = Expr
+
+@dataclass
+class MemberExpr(Expr):
+    obj: Expr
+    property: Expr

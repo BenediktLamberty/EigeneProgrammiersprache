@@ -11,19 +11,35 @@ class TokenType(Enum):
     # literal
     NUMBER = auto()
     IDENTIFYER = auto()
+    NULL = auto()
     # sonderzeichen
-    EQUALS = auto()
-    OPEN_PAREN = auto()
-    CLOSE_PAREN = auto()
+    EQUALS = auto()  # =
+    TO = auto()  # ->
+    SEMICOLON = auto()  # ;
+    COLON = auto()  # :
+    COMMA = auto()  # ,
+    DASH = auto()  # -
+    OPEN_PAREN = auto()  # (
+    CLOSE_PAREN = auto()  # )
+    OPEN_BRACE = auto()  # {
+    CLOSE_BRACE = auto()  # }
+    OPEN_BRACKET = auto()  # [
+    CLOSE_BRACKET = auto()  # ]
+    LESS = auto()  # <
+    GREATER = auto()  # >
     BINARY_OPERATOR = auto()
     # keywords
     LET = auto()
+    CONST = auto()
     # end of file
     EOF = auto()
 
 KEYWORDS = {
     "let": TokenType.LET,
-    "mod": TokenType.BINARY_OPERATOR
+    "const": TokenType.CONST,
+
+    "mod": TokenType.BINARY_OPERATOR,
+    "Null": TokenType.NULL
 }
 
 
@@ -37,7 +53,7 @@ class Token:
 def tokenize(sourceCode: str) -> List[Token]:
 
     def is_skippable(src: str) -> bool:
-        return src in [" ", "\n", "\t"]
+        return src in [" ", "\n", "\t", "\r"]
 
     tokens = []
     src = list(sourceCode)
@@ -48,10 +64,30 @@ def tokenize(sourceCode: str) -> List[Token]:
             tokens.append(Token(src.pop(0), TokenType.OPEN_PAREN))
         elif src[0] == ")":
             tokens.append(Token(src.pop(0), TokenType.CLOSE_PAREN))
+        elif src[0] == "{":
+            tokens.append(Token(src.pop(0), TokenType.OPEN_BRACE))
+        elif src[0] == "}":
+            tokens.append(Token(src.pop(0), TokenType.CLOSE_BRACE))
+        elif src[0] == "[":
+            tokens.append(Token(src.pop(0), TokenType.OPEN_BRACKET))
+        elif src[0] == "]":
+            tokens.append(Token(src.pop(0), TokenType.CLOSE_BRACKET))
+        elif src[0] == "-" and src[1] == ">":
+            tokens.append(Token(src.pop(0) + src.pop(0), TokenType.TO))
         elif src[0] in ["+", "-", "*", "/"]:
             tokens.append(Token(src.pop(0), TokenType.BINARY_OPERATOR))
         elif src[0] == "=":
             tokens.append(Token(src.pop(0), TokenType.EQUALS))
+        elif src[0] == ";":
+            tokens.append(Token(src.pop(0), TokenType.SEMICOLON))
+        elif src[0] == ":":
+            tokens.append(Token(src.pop(0), TokenType.COLON))
+        elif src[0] == ",":
+            tokens.append(Token(src.pop(0), TokenType.COMMA))
+        elif src[0] == "<":
+            tokens.append(Token(src.pop(0), TokenType.LESS))
+        elif src[0] == ">":
+            tokens.append(Token(src.pop(0), TokenType.GREATER))
         else: # Multichar token
             # Num Token
             if src[0].isdigit():
