@@ -18,6 +18,7 @@ class TokenType(Enum):
     SEMICOLON = auto()  # ;
     COLON = auto()  # :
     COMMA = auto()  # ,
+    DOT = auto()  # .
     DASH = auto()  # -
     OPEN_PAREN = auto()  # (
     CLOSE_PAREN = auto()  # )
@@ -84,6 +85,8 @@ def tokenize(sourceCode: str) -> List[Token]:
             tokens.append(Token(src.pop(0), TokenType.COLON))
         elif src[0] == ",":
             tokens.append(Token(src.pop(0), TokenType.COMMA))
+        elif src[0] == ".":
+            tokens.append(Token(src.pop(0), TokenType.DOT))
         elif src[0] == "<":
             tokens.append(Token(src.pop(0), TokenType.LESS))
         elif src[0] == ">":

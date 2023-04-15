@@ -49,19 +49,20 @@ class AssignmentExpr(Expr):
 
 @dataclass
 class Property(Expr):
-    arg: Expr
+    arg: str
     value: Expr
 
 @dataclass
-class Map(Expr):
+class ObjectLiteral(Expr):
     properties: List[Property]
 
 @dataclass
 class CallExpr(Expr):
-    args = List[Expr]
-    caller = Expr
+    args: List[Expr]
+    caller: Expr
 
 @dataclass
 class MemberExpr(Expr):
     obj: Expr
     property: Expr
+    computed: bool
