@@ -1,5 +1,5 @@
 from abstractSyntaxTree import Stmt, Program, Expr, BinaryExpr, NumericLiteral, Identifier, \
-    NullLiteral, VarDecl, AssignmentExpr, Property, ObjectLiteral, CallExpr, MemberExpr
+    NullLiteral, VarDecl, AssignmentExpr, Property, ObjectLiteral, CallExpr, MemberExpr, FunctionDeclaration
 from lexer import tokenize, Token, TokenType, TokenError
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -52,8 +52,37 @@ class Parser:
         elif ([token.type for token in self.tokens[0:3]] 
             == [TokenType.IDENTIFYER, TokenType.COLON, TokenType.EQUALS]):
             return self.parse_var_decl(has_let=False)
+        elif self.tokens[0].type == TokenType.FUNC:
+            return self.parse_func_declaration()
         else:
             return self.parse_expr()
+        
+    def parse_func_declaration(self):
+        self.eat()
+        name = self.expect(TokenType.IDENTIFYER, "Expected Function name following keywords").value
+        with_colon = self.tokens[0].type == TokenType.COLON
+        if with_colon:
+            self.eat()
+        args = self.parse_args()
+        params = []
+        for arg in args:
+            if not isinstance(arg, Identifier):
+                raise TokenError("Iside func decl expected to be a str")
+            params.append(arg.symbol)
+        if with_colon:
+            self.expect(TokenType.TO, "Mapping arrow expexted")
+        else:
+            self.expect_multiple([TokenType.COLON, TokenType.EQUALS], "Equation defenition expected using >:=<")
+        self.expect(TokenType.OPEN_BRACE, "func body expected")
+        body = []
+        while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
+            body.append(self.parse_stmt())
+        self.expect(TokenType.CLOSE_BRACE, "Closing brace expected at end of func body")
+        func = FunctionDeclaration(name, params, body)
+        return func
+
+
+
 
     def parse_expr(self) -> Expr:
         return self.parse_assignment_expr()

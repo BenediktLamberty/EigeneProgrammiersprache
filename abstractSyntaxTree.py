@@ -25,6 +25,12 @@ class VarDecl(Stmt):
     value: Expr
 
 @dataclass
+class FunctionDeclaration(Stmt):
+    name: str
+    parameters: List[str]
+    body: List[Stmt]
+
+@dataclass
 class BinaryExpr(Expr):
     left: Expr
     right: Expr

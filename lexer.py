@@ -32,6 +32,7 @@ class TokenType(Enum):
     # keywords
     LET = auto()
     CONST = auto()
+    FUNC = auto()
     # end of file
     EOF = auto()
 
@@ -40,7 +41,9 @@ KEYWORDS = {
     "const": TokenType.CONST,
 
     "mod": TokenType.BINARY_OPERATOR,
-    "Null": TokenType.NULL
+    "Null": TokenType.NULL,
+
+    "func": TokenType.FUNC
 }
 
 
