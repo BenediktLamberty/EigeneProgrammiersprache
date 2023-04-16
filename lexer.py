@@ -10,6 +10,8 @@ class TokenError(Exception):
 class TokenType(Enum):
     # literal
     NUMBER = auto()
+    STR = auto()
+    BOOL = auto()
     IDENTIFYER = auto()
     NULL = auto()
     # sonderzeichen
@@ -26,13 +28,26 @@ class TokenType(Enum):
     CLOSE_BRACE = auto()  # }
     OPEN_BRACKET = auto()  # [
     CLOSE_BRACKET = auto()  # ]
-    LESS = auto()  # <
-    GREATER = auto()  # >
+    OPEN_STRING = auto()
+    CLOSE_STRING = auto()
+    BINARY_COMPARATOR = auto()  # == != <= >= < >
     BINARY_OPERATOR = auto()
+    BINARY_LOGIC_OP = auto()
     # keywords
     LET = auto()
     CONST = auto()
     FUNC = auto()
+
+    IF = auto()
+    ELIF = auto()
+    ELSE = auto()
+    WHILE = auto()
+    DO = auto()
+    THEN = auto()
+    FOR = auto()
+
+    RETURN = auto()
+    BREAK = auto()
     # end of file
     EOF = auto()
 
@@ -41,9 +56,23 @@ KEYWORDS = {
     "const": TokenType.CONST,
 
     "mod": TokenType.BINARY_OPERATOR,
-    "Null": TokenType.NULL,
 
-    "func": TokenType.FUNC
+    "Null": TokenType.NULL,
+    "True": TokenType.BOOL,
+    "False": TokenType.BOOL,
+
+    "func": TokenType.FUNC,
+
+    "if": TokenType.IF,
+    "elif": TokenType.ELIF,
+    "else": TokenType.ELSE,
+    "while": TokenType.WHILE,
+    "do": TokenType.DO,
+    "then": TokenType.THEN,
+    "for": TokenType.FOR,
+
+    "return": TokenType.RETURN,
+    "break": TokenType.BREAK
 }
 
 
@@ -63,8 +92,31 @@ def tokenize(sourceCode: str) -> List[Token]:
     src = list(sourceCode)
 
     # Alle Tokens fürs ganze File erstellen
+
     while len(src) > 0:
-        if src[0] == "(":
+        if src[0] == "#" and src[1] == "[":
+            while (src[0] != "]" or src[1] != "#") and len(src) > 0:
+                src.pop(0)
+            src.pop(0)
+            src.pop(0)
+        elif src[0] == "#":
+            while len(src) > 0 and src[0] != "\n":
+                src.pop(0)
+        elif src[0] == "\"":
+            src.pop(0)
+            string = ""
+            while src[0] != "\"":
+                string += src.pop(0)
+            tokens.append(Token(string, TokenType.STR))
+            src.pop(0)
+        elif src[0] == "\'":
+            src.pop(0)
+            string = ""
+            while src[0] != "\'":
+                string += src.pop(0)
+            tokens.append(Token(string, TokenType.STR))
+            src.pop(0)
+        elif src[0] == "(":
             tokens.append(Token(src.pop(0), TokenType.OPEN_PAREN))
         elif src[0] == ")":
             tokens.append(Token(src.pop(0), TokenType.CLOSE_PAREN))
@@ -78,7 +130,13 @@ def tokenize(sourceCode: str) -> List[Token]:
             tokens.append(Token(src.pop(0), TokenType.CLOSE_BRACKET))
         elif src[0] == "-" and src[1] == ">":
             tokens.append(Token(src.pop(0) + src.pop(0), TokenType.TO))
-        elif src[0] in ["+", "-", "*", "/"]:
+        elif len(src) > 1 and (src[0] + src[1]) in ["==", "!=", ">=", "<="]:
+            tokens.append(Token(src.pop(0) + src.pop(0), TokenType.BINARY_COMPARATOR))
+        elif len(src) > 1 and (src[0] + src[1]) in ["&&", "||"]:
+            tokens.append(Token(src.pop(0) + src.pop(0), TokenType.BINARY_LOGIC_OP))
+        elif src[0] in ["+", "-", "*", "/", "^"]:
+            tokens.append(Token(src.pop(0), TokenType.BINARY_OPERATOR))
+        elif src[0] == "!":
             tokens.append(Token(src.pop(0), TokenType.BINARY_OPERATOR))
         elif src[0] == "=":
             tokens.append(Token(src.pop(0), TokenType.EQUALS))
@@ -90,16 +148,18 @@ def tokenize(sourceCode: str) -> List[Token]:
             tokens.append(Token(src.pop(0), TokenType.COMMA))
         elif src[0] == ".":
             tokens.append(Token(src.pop(0), TokenType.DOT))
-        elif src[0] == "<":
-            tokens.append(Token(src.pop(0), TokenType.LESS))
-        elif src[0] == ">":
-            tokens.append(Token(src.pop(0), TokenType.GREATER))
+        elif src[0] in ["<", ">"]:
+            tokens.append(Token(src.pop(0), TokenType.BINARY_COMPARATOR))
         else: # Multichar token
             # Num Token
             if src[0].isdigit():
                 num = ""
                 while len(src) > 0 and src[0].isdigit():
                     num += src.pop(0)
+                if len(src) > 0 and src[0] == ".":
+                    num += src.pop(0)
+                    while len(src) > 0 and src[0].isdigit():
+                        num += src.pop()
                 tokens.append(Token(num, TokenType.NUMBER))
             # ident token
             elif src[0].isalpha():

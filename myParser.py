@@ -1,5 +1,6 @@
 from abstractSyntaxTree import Stmt, Program, Expr, BinaryExpr, NumericLiteral, Identifier, \
-    NullLiteral, VarDecl, AssignmentExpr, Property, ObjectLiteral, CallExpr, MemberExpr, FunctionDeclaration
+    NullLiteral, VarDecl, AssignmentExpr, Property, ObjectLiteral, CallExpr, MemberExpr, FunctionDeclaration, \
+    String, Comparator, UnaryExpr, If, IfElifElse, While, Return, Break
 from lexer import tokenize, Token, TokenType, TokenError
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -54,10 +55,70 @@ class Parser:
             return self.parse_var_decl(has_let=False)
         elif self.tokens[0].type == TokenType.FUNC:
             return self.parse_func_declaration()
+        elif self.tokens[0].type == TokenType.IF:
+            return self.parse_ifElifElse_block()
+        elif self.tokens[0].type in [TokenType.WHILE, TokenType.DO]:
+            return self.parse_while_loop()
+        elif self.tokens[0].type == TokenType.RETURN:
+            return self.parse_return()
+        elif self.tokens[0].type == TokenType.BREAK:
+            return self.parse_break()
         else:
             return self.parse_expr()
         
-    def parse_func_declaration(self):
+    def parse_return(self) -> Stmt:
+        self.expect(TokenType.RETURN, "Return missing return")
+        return Return(self.parse_expr())
+    
+    def parse_break(self) -> Stmt:
+        self.expect(TokenType.BREAK, "Break missing break")
+        return Break()
+        
+    def parse_ifElifElse_block(self) -> Stmt:
+        cases = []
+        self.expect(TokenType.IF, "If Expected")
+        if_condition = self.parse_expr()
+        self.expect(TokenType.OPEN_BRACE, "Open Brace expected afer If")
+        if_body = []
+        while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
+            if_body.append(self.parse_stmt())
+        self.expect(TokenType.CLOSE_BRACE, "Closing brace expected at end of if body")
+        cases.append(If(if_condition, if_body))
+        while self.tokens[0].type == TokenType.ELIF:
+            self.eat()
+            elif_condition = self.parse_expr()
+            self.expect(TokenType.OPEN_BRACE, "Open Brace expected after elif")
+            elif_body = []
+            while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
+                elif_body.append(self.parse_stmt())
+            self.expect(TokenType.CLOSE_BRACE, "Closing brace expected at end of elif body")
+            cases.append(If(elif_condition, elif_body))
+        if self.tokens[0].type == TokenType.ELSE:
+            self.eat()
+            else_condition = NumericLiteral(1)
+            self.expect(TokenType.OPEN_BRACE, "Open Brace expected after else")
+            else_body = []
+            while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
+                else_body.append(self.parse_stmt())
+            self.expect(TokenType.CLOSE_BRACE, "Closing brace expected at end of else body")
+            cases.append(If(else_condition, else_body))
+        return IfElifElse(cases)
+    
+    def parse_while_loop(self) -> Stmt:
+        has_do = False
+        if self.tokens[0].type == TokenType.DO:
+            self.expect_multiple([TokenType.DO, TokenType.COMMA, TokenType.THEN], "Do then expected in while loop")
+            has_do = True
+        self.expect(TokenType.WHILE, "While loop missing while")
+        condition = self.parse_expr()
+        self.expect(TokenType.OPEN_BRACE, "Expected open Brace afer While")
+        body = []
+        while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
+            body.append(self.parse_stmt())
+        self.expect(TokenType.CLOSE_BRACE, "Expected close brace at end of while loop")
+        return While(condition, has_do, body)
+  
+    def parse_func_declaration(self) -> Stmt:
         self.eat()
         name = self.expect(TokenType.IDENTIFYER, "Expected Function name following keywords").value
         with_colon = self.tokens[0].type == TokenType.COLON
@@ -85,7 +146,31 @@ class Parser:
 
 
     def parse_expr(self) -> Expr:
-        return self.parse_assignment_expr()
+        return self.parse_or_expr()
+    
+    def parse_or_expr(self) -> Expr:
+        left = self.parse_and_expr()
+        while self.tokens[0].value in ["||"] and self.tokens[0].type == TokenType.BINARY_LOGIC_OP:
+            operator = self.eat().value
+            right = self.parse_and_expr()
+            left = BinaryExpr(left, right, operator)
+        return left
+    
+    def parse_and_expr(self) -> Expr:
+        left = self.parse_comparative_expr()
+        while self.tokens[0].value in ["&&"] and self.tokens[0].type == TokenType.BINARY_LOGIC_OP:
+            operator = self.eat().value
+            right = self.parse_comparative_expr()
+            left = BinaryExpr(left, right, operator)
+        return left
+        
+    def parse_comparative_expr(self) -> Expr:
+        left = self.parse_assignment_expr()
+        while self.tokens[0].type == TokenType.BINARY_COMPARATOR:
+            operator = self.eat().value
+            right = self.parse_assignment_expr()
+            left = Comparator(left, right, operator)
+        return left
     
     def parse_assignment_expr(self) -> Expr:
         left = self.parse_object_expr()
@@ -105,10 +190,10 @@ class Parser:
             # {arg, }
             if self.tokens[0].type == TokenType.COMMA:
                 self.eat()
-                properties.append(argument, NullLiteral())
+                properties.append(Property(argument, NullLiteral()))
             # {arg}
             if self.tokens[0].type == TokenType.CLOSE_BRACE:
-                properties.append(argument, NullLiteral())
+                properties.append(Property(argument, NullLiteral()))
             # {key : val}
             self.expect(TokenType.COLON, "Missing >:< following argument in Obj")
             value = self.parse_expr()
@@ -120,7 +205,7 @@ class Parser:
 
     def parse_additive_expr(self) -> Expr:
         left = self.parse_multiplicative_expr()
-        while self.tokens[0].value in ["+", "-"] and self.tokens[1].type != TokenType.GREATER:
+        while self.tokens[0].value in ["+", "-"] and self.tokens[0].type == TokenType.BINARY_OPERATOR:
             operator = self.eat().value
             right = self.parse_multiplicative_expr()
             left = BinaryExpr(left, right, operator)
@@ -128,7 +213,7 @@ class Parser:
     
     def parse_multiplicative_expr(self) -> Expr:
         left = self.parse_call_member_expr() # !!!!!
-        while self.tokens[0].value in ["*", "/", "mod"]:
+        while self.tokens[0].value in ["*", "/", "mod"] and self.tokens[0].type == TokenType.BINARY_OPERATOR:
             operator = self.eat().value
             right = self.parse_call_member_expr() # !!!!
             left = BinaryExpr(left, right, operator)
@@ -148,6 +233,8 @@ class Parser:
         return call_expr
 
     def parse_args(self) -> List[Expr]:
+        if self.tokens[0].type != TokenType.OPEN_PAREN:
+            return [self.parse_expr()]
         self.expect(TokenType.OPEN_PAREN, "Expected open parenthesis")
         args = None
         if self.tokens[0].type == TokenType.CLOSE_PAREN:
@@ -164,14 +251,14 @@ class Parser:
         return args 
 
     def parse_member_expr(self) -> Expr:
-        object = self.parse_primary_expr()
+        object = self.parse_unary_expr()
         while self.tokens[0].type in [TokenType.DOT, TokenType.OPEN_BRACKET]:
             operator = self.eat()
             property: Expr
             computed: bool
             if operator.type == TokenType.DOT:
                 computed = False
-                property = self.parse_primary_expr()
+                property = self.parse_unary_expr()
                 if not isinstance(property, Identifier):
                     raise TokenError("Cannot use dot operator without right side being identifier")
             else:
@@ -180,6 +267,14 @@ class Parser:
                 self.expect(TokenType.CLOSE_BRACKET, "Missing computed value")
             object = MemberExpr(object, property, computed)
         return object
+    
+    def parse_unary_expr(self) -> Expr:
+        if self.tokens[0].type == TokenType.BINARY_OPERATOR and self.tokens[0].value in ["-", "!"]:
+            operator = self.eat().value
+            arg = self.parse_expr()
+            return UnaryExpr(arg, operator)
+        else:
+            return self.parse_primary_expr()
 
 
     def parse_primary_expr(self) -> Expr:
@@ -187,11 +282,22 @@ class Parser:
 
         if tk == TokenType.IDENTIFYER:
             return Identifier(self.eat().value) # ???
+        elif tk == TokenType.STR:
+            return String(self.eat().value)
+        elif tk == TokenType.BOOL:
+            boolean = self.eat().value
+            if boolean == "True":
+                return NumericLiteral(1)
+            else: 
+                return NumericLiteral(0)
         elif tk == TokenType.NULL:
             self.eat()
             return NullLiteral()
         elif tk == TokenType.NUMBER:
-            return NumericLiteral(float(self.eat().value)) # ???
+            if self.tokens[0].value.isdigit():
+                return NumericLiteral(int(self.eat().value)) # ???
+            else:
+                return NumericLiteral(float(self.eat().value)) 
         elif tk == TokenType.OPEN_PAREN:
             self.eat()
             value = self.parse_expr()
