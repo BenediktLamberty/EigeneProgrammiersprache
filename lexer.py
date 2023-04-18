@@ -86,7 +86,7 @@ class Token:
 def tokenize(sourceCode: str) -> List[Token]:
 
     def is_skippable(src: str) -> bool:
-        return src in [" ", "\n", "\t", "\r"]
+        return src in [" ", "\n", "\t", "\r", ";"]
 
     tokens = []
     src = list(sourceCode)
@@ -140,8 +140,6 @@ def tokenize(sourceCode: str) -> List[Token]:
             tokens.append(Token(src.pop(0), TokenType.BINARY_OPERATOR))
         elif src[0] == "=":
             tokens.append(Token(src.pop(0), TokenType.EQUALS))
-        elif src[0] == ";":
-            tokens.append(Token(src.pop(0), TokenType.SEMICOLON))
         elif src[0] == ":":
             tokens.append(Token(src.pop(0), TokenType.COLON))
         elif src[0] == ",":
