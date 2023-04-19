@@ -48,6 +48,8 @@ class TokenType(Enum):
 
     RETURN = auto()
     BREAK = auto()
+
+    OUT = auto()
     # end of file
     EOF = auto()
 
@@ -72,7 +74,9 @@ KEYWORDS = {
     "for": TokenType.FOR,
 
     "return": TokenType.RETURN,
-    "break": TokenType.BREAK
+    "break": TokenType.BREAK,
+
+    "output": TokenType.OUT
 }
 
 

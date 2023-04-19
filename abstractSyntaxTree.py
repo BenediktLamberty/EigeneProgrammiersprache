@@ -14,7 +14,8 @@ class ASTError(Exception):
 
 @dataclass
 class Stmt(ABC):
-    pass
+    def generate_code():
+        pass
 
 @dataclass
 class Program(Stmt):
@@ -26,12 +27,17 @@ class Program(Stmt):
         """
         for stmt in self.body:
             code += stmt.generate_code(env)
+            if isinstance(stmt, Expr):
+                code += """
+        addi $sp, $sp, 4  # raising sp after expression
+                """
         code += env.generate_data()
         return code
 
 @dataclass
 class Expr(Stmt, ABC):
-    pass
+    def generate_code():
+        pass
 
 @dataclass
 class VarDecl(Stmt):
@@ -155,6 +161,7 @@ class NumericLiteral(Expr):
         addi $sp, $sp, -4
         sw $t8, ($sp)
         """
+
 @dataclass
 class String(Expr):
     value: str
@@ -168,6 +175,17 @@ class NullLiteral(Expr):
 class AssignmentExpr(Expr):
     assigne: Expr
     value: Expr
+    def generate_code(self, env: Env) -> str:
+        code = self.value.generate_code(env)
+        if isinstance(self.assigne, Identifier):
+            env.useGlobalVar(self.assigne.symbol)
+            code += f"""
+        lw $t8, ($sp)  # assign value to var {self.assigne.symbol}
+        sw $t8, {self.assigne.symbol}
+            """
+        else:
+            raise ASTError("Unsupported expr as assigne")
+        return code
 
 @dataclass
 class Property(Expr):
@@ -201,3 +219,16 @@ class For(Stmt):
     end: NumericLiteral
     step: NumericLiteral
     body: List[Stmt]
+
+@dataclass
+class Output(Stmt):
+    out: Expr
+    def generate_code(self, env: Env):
+        code = self.out.generate_code(env)
+        code += """
+        lw $a0, ($sp)  # outputting an int !!!
+        addi $sp, $sp, 4
+        li $v0, 1
+        syscall
+        """
+        return code

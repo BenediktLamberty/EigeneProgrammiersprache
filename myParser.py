@@ -1,6 +1,6 @@
 from abstractSyntaxTree import Stmt, Program, Expr, BinaryExpr, NumericLiteral, Identifier, \
     NullLiteral, VarDecl, AssignmentExpr, Property, ObjectLiteral, CallExpr, MemberExpr, FunctionDeclaration, \
-    String, Comparator, UnaryExpr, If, IfElifElse, While, Return, Break
+    String, Comparator, UnaryExpr, If, IfElifElse, While, Return, Break, Output
 from lexer import tokenize, Token, TokenType, TokenError
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -34,9 +34,12 @@ class Parser:
                     preves.append(self.eat())
                 return preves
         raise TokenError(f"Error at >{preves}< \n{err}\nExpecting: {types}")
+    
+    def optional(self, type: TokenType):
+        if self.tokens[0].type == type:
+            self.eat()
         
             
-
     def produce_AST(self, sourceCode: str) -> Program:
         self.tokens = tokenize(sourceCode) 
 
@@ -63,8 +66,18 @@ class Parser:
             return self.parse_return()
         elif self.tokens[0].type == TokenType.BREAK:
             return self.parse_break()
+        elif self.tokens[0].type == TokenType.OUT:
+            return self.parse_output()
         else:
             return self.parse_expr()
+        
+    def parse_output(self) -> Stmt:
+        self.expect(TokenType.OUT, "output misses out")
+        self.optional(TokenType.OPEN_PAREN)
+        out = self.parse_expr()
+        self.optional(TokenType.CLOSE_PAREN)
+        return Output(out)
+
         
     def parse_return(self) -> Stmt:
         self.expect(TokenType.RETURN, "Return missing return")

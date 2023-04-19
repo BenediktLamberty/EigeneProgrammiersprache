@@ -1,12 +1,12 @@
-
+from enum import Enum, auto
 
 class VarError(Exception):
     pass
 
-
 class Env():
     usedGlobalVarNames = {}
     gotoCounter = 0
+
 
     def deklGlobalVar(self, varname: str, init=None):
         if varname in self.usedGlobalVarNames:
