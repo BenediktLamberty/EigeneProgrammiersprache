@@ -1,5 +1,6 @@
 import myParser
 from functools import reduce
+from environment import Env
 
 
 
@@ -23,7 +24,23 @@ def from_file():
     file.close()
     program = parser.produce_AST(lines)
     print(program)
+    return program
+
+def test():
+    code = """
+jklasdjfklöj
+alöksdjflköjas
+ddfjlöjkaölsdkjf
+    """
+    code += """
+alöskdjflökj
+asdfjlökjölk
+asdfjölkjölkj
+    """
+    print(code)
 
 
 if __name__ == "__main__":
-    from_file()
+    env = Env()
+    code = from_file().generate_code(env)
+    print(code)
