@@ -35,17 +35,7 @@ def from_to_file():
     file.close()
 
 def test():
-    code = """
-jklasdjfklöj
-alöksdjflköjas
-ddfjlöjkaölsdkjf
-    """
-    code += """
-alöskdjflökj
-asdfjlökjölk
-asdfjölkjölkj
-    """
-    print(code)
+    pass
 
 
 if __name__ == "__main__":

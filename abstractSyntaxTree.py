@@ -104,9 +104,9 @@ class BinaryExpr(Expr):
         code += self.right.generate_code(env)
 
         code += """
-        lw $t8, ($sp)  # Binary operation
+        lw $t9, ($sp)  # Binary operation
         addi $sp, $sp, 4
-        lw $t9, ($sp)
+        lw $t8, ($sp)
             """
         if self.operator == "+":
             code += """
@@ -114,7 +114,39 @@ class BinaryExpr(Expr):
                 """
         elif self.operator == "-":
             code += """
-        sub $t8, $t8, $t9
+        sub $t8, $t8, $t9  # - operation
+            """
+        elif self.operator == "*":
+            code += """
+        mul $t8, $t8, $t9  # * operation
+            """
+        elif self.operator == "/":
+            code += """
+        div $t8, $t8, $t9  # int / operation !!!!!!!!!!!!!!!!!!!!
+            """
+        elif self.operator == "&&":
+            goto = env.getGoto()
+            code += f"""
+        mul $t8, $t8, $t9  # && logic operation
+        beq $t8, $zero, exitLogic{goto}
+        li $t8, 1
+exitLogic{goto}:
+            """
+        elif self.operator == "||":
+            goto = env.getGoto()
+            code += f"""
+        bne $t8, $zero, doOr{goto}
+        bne $t9, $zero, doOr{goto}
+        li $t8, 0
+        b exitLogic{goto}
+doOr{goto}:
+        li $t8, 1
+exitLogic{goto}:
+            """
+        elif self.operator == "mod":
+            code += """
+        div $t8, $t9  # mod operation
+        mfhi $t8
             """
         else:
             raise ASTError("BinaryExpr has invalid operator")

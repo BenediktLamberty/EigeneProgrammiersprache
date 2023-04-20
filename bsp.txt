@@ -1,2 +1,3 @@
-let x = 10 - 20
-output(x)
+let x = 8
+x = 758 - 68 * (x+9)
+output x

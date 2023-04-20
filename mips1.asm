@@ -2,25 +2,53 @@
 # Program:
         .text
         
-        li $t8, 10  # Num 10 to stack
+        # Var x decl in .data with value 8
+            
+        li $t8, 758  # Num 758 to stack
         addi $sp, $sp, -4
         sw $t8, ($sp)
         
-        li $t8, 20  # Num 20 to stack
+        li $t8, 68  # Num 68 to stack
         addi $sp, $sp, -4
         sw $t8, ($sp)
         
-        lw $t8, ($sp)  # Binary operation
+        lw $t8, x  # Identifier x to stack
+        addi $sp, $sp, -4
+        sw $t8, ($sp)
+        
+        li $t8, 9  # Num 9 to stack
+        addi $sp, $sp, -4
+        sw $t8, ($sp)
+        
+        lw $t9, ($sp)  # Binary operation
         addi $sp, $sp, 4
-        lw $t9, ($sp)
+        lw $t8, ($sp)
             
-        sub $t8, $t8, $t9
+        add $t8, $t8, $t9  # + operation
+                
+        sw $t8, ($sp)
+            
+        lw $t9, ($sp)  # Binary operation
+        addi $sp, $sp, 4
+        lw $t8, ($sp)
+            
+        mul $t8, $t8, $t9  # * operation
             
         sw $t8, ($sp)
             
-        lw $t8, ($sp)  # init variable x
+        lw $t9, ($sp)  # Binary operation
+        addi $sp, $sp, 4
+        lw $t8, ($sp)
+            
+        sub $t8, $t8, $t9  # - operation
+            
+        sw $t8, ($sp)
+            
+        lw $t8, ($sp)  # assign value to var x
         sw $t8, x
             
+        addi $sp, $sp, 4  # raising sp after expression
+                
         lw $t8, x  # Identifier x to stack
         addi $sp, $sp, -4
         sw $t8, ($sp)
@@ -33,5 +61,5 @@
 # Global Variables
         .data
         
-        x: .space 4
+        x: .word 8
                 
