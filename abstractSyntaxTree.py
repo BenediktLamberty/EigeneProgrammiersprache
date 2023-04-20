@@ -89,6 +89,29 @@ class While(Stmt):
     condition: Expr
     has_do: bool
     body: List[Stmt]
+    def generate_code(self, env: Env) -> str:
+        code = ""
+        goto = env.getGoto()
+        condition_code = self.condition.generate_code(env)
+        body_code = """
+        # Body of While Loop
+        """
+        for stmt in self.body:
+            body_code += stmt.generate_code(env)
+            if isinstance(stmt, Expr):
+                body_code += """
+        addi $sp, $sp, 4  # raising sp after expression
+                """
+        if self.has_do:
+            code = f"""
+startDoWhile{goto}:
+            """
+            code += body_code + condition_code
+            code += f"""
+        lw $t8, ()
+
+            """
+        
 
 @dataclass
 class Break(Stmt):
