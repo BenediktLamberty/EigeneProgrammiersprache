@@ -102,16 +102,27 @@ class BinaryExpr(Expr):
     def generate_code(self, env: Env) -> str:
         code = self.left.generate_code(env)
         code += self.right.generate_code(env)
-        if self.operator == "+":
-            code += """
-        lw $t8, ($sp)  # Binary + operation
+
+        code += """
+        lw $t8, ($sp)  # Binary operation
         addi $sp, $sp, 4
         lw $t9, ($sp)
-        add $t8, $t8, $t9
-        sw $t8, ($sp)
+            """
+        if self.operator == "+":
+            code += """
+        add $t8, $t8, $t9  # + operation
+                """
+        elif self.operator == "-":
+            code += """
+        sub $t8, $t8, $t9
             """
         else:
             raise ASTError("BinaryExpr has invalid operator")
+        
+        code += """
+        sw $t8, ($sp)
+            """
+        
         return code
     
 @dataclass

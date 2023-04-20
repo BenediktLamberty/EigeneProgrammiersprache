@@ -26,6 +26,14 @@ def from_file():
     print(program)
     return program
 
+def from_to_file():
+    env = Env()
+    code = from_file().generate_code(env)
+    print(code)
+    file = open("mips1.asm", "w")
+    file.write(code)
+    file.close()
+
 def test():
     code = """
 jklasdjfklöj
@@ -41,6 +49,4 @@ asdfjölkjölkj
 
 
 if __name__ == "__main__":
-    env = Env()
-    code = from_file().generate_code(env)
-    print(code)
+    from_to_file()

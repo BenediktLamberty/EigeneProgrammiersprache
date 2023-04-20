@@ -1,0 +1,20 @@
+
+# Program:
+        .text
+        
+        # Var x decl in .data with value 10
+            
+        lw $t8, x  # Identifier x to stack
+        addi $sp, $sp, -4
+        sw $t8, ($sp)
+        
+        lw $a0, ($sp)  # outputting an int !!!
+        addi $sp, $sp, 4
+        li $v0, 1
+        syscall
+        
+# Global Variables
+        .data
+        
+        x: .word 10
+                
