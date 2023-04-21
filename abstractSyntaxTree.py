@@ -79,10 +79,42 @@ class Return(Stmt):
 class If(Stmt):
     condition: Expr
     body: List[Stmt]
+    def generate_code(self, env: Env, goto_exit: int) -> str:
+        goto = env.getGoto()
+        code = self.condition.generate_code(env)
+        code += f"""
+        lw $t8, ($sp)  # check if condition
+        addi $sp, $sp, 4
+        beq $t8, $zero, ifBlockSkip{goto}
+        """
+        for stmt in self.body:
+            code += stmt.generate_code(env)
+            if isinstance(stmt, Expr):
+                code += """
+        addi $sp, $sp, 4  # raising sp after expression
+                """
+        code += f"""
+        b exitIf{goto_exit}  # goto if end
+ifBlockSkip{goto}:
+        """
+        return code
+        
 
 @dataclass
 class IfElifElse(Stmt):
     cases: List[If]
+    def generate_code(self, env: Env) -> str:
+        goto = env.getGoto()
+        code = """
+# If Elif Else block
+        """
+        for case in self.cases:
+            code += case.generate_code(env, goto)
+        code += f"""
+exitIf{goto}:
+        """
+        return code
+            
 
 @dataclass
 class While(Stmt):
@@ -103,14 +135,31 @@ class While(Stmt):
         addi $sp, $sp, 4  # raising sp after expression
                 """
         if self.has_do:
-            code = f"""
+            code += f"""
 startDoWhile{goto}:
             """
             code += body_code + condition_code
             code += f"""
-        lw $t8, ()
-
+        lw $t8, ($sp)  # while loop condition check
+        addi $sp, $sp, 4
+        bne $t8, $zero, startDoWhile{goto}
             """
+        else:
+            code += f"""
+whileCondition{goto}:
+            """
+            code += condition_code
+            code += f"""
+        lw $t8, ($sp)  # while loop condition check
+        addi $sp, $sp, 4
+        beq $t8, $zero, exitWhile{goto}
+            """
+            code += body_code
+            code += f"""
+        b whileCondition{goto}  # looping while
+exitWhile{goto}:
+            """
+        return code
         
 
 @dataclass
@@ -278,6 +327,50 @@ class Comparator(Expr):
     left: Expr
     right: Expr
     operator: str
+    def generate_code(self, env: Env) -> str:
+        code = self.left.generate_code(env)
+        code += self.right.generate_code(env)
+        goto = env.getGoto()
+        code += """
+        lw $t9, ($sp)  # comparison
+        addi $sp, $sp, 4
+        lw $t8, ($sp)
+            """
+        if self.operator == "<":
+            code += f"""
+        blt $t8, $t9, conTrue{goto}  # comparator <
+            """
+        elif self.operator == ">":
+             code += f"""
+        bgt $t8, $t9, conTrue{goto}  # comparator >
+            """
+        elif self.operator == "<=":
+             code += f"""
+        ble $t8, $t9, conTrue{goto}  # comparator <=
+            """
+        elif self.operator == ">=":
+             code += f"""
+        bge $t8, $t9, conTrue{goto}  # comparator >=
+            """
+        elif self.operator == "==":
+             code += f"""
+        beq $t8, $t9, conTrue{goto}  # comparator ==
+            """
+        elif self.operator == "!=":
+             code += f"""
+        bne $t8, $t9, conTrue{goto}  # comparator !=
+            """
+        else:
+            raise ASTError("invalid comparator")
+        code += f"""
+        li $t8, 0  # comparator descision
+        b conExit{goto}
+conTrue{goto}:
+        li $t8, 1
+conExit{goto}:
+        sw $t8, ($sp)
+            """
+        return code
 
 @dataclass
 class For(Stmt):
