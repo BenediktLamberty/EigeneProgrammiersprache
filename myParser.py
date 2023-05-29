@@ -1,6 +1,4 @@
-from abstractSyntaxTree import Stmt, Program, Expr, BinaryExpr, NumericLiteral, Identifier, \
-    NullLiteral, VarDecl, AssignmentExpr, Property, ObjectLiteral, CallExpr, MemberExpr, FunctionDeclaration, \
-    String, Comparator, UnaryExpr, If, IfElifElse, While, Return, Break, Output
+from abstractSyntaxTree import * #Cleaned up the imports by setting it to input everything
 from lexer import tokenize, Token, TokenType, TokenError
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -39,7 +37,6 @@ class Parser:
         if self.tokens[0].type == type:
             self.eat()
         
-            
     def produce_AST(self, sourceCode: str) -> Program:
         self.tokens = tokenize(sourceCode) 
 
@@ -154,9 +151,6 @@ class Parser:
         self.expect(TokenType.CLOSE_BRACE, "Closing brace expected at end of func body")
         func = FunctionDeclaration(name, params, body)
         return func
-
-
-
 
     def parse_expr(self) -> Expr:
         return self.parse_or_expr()
@@ -318,9 +312,7 @@ class Parser:
             return value
         else:
             raise TokenError(f"Token Error found at >{self.tokens[0]}< during parsing")
-        
-    
-        
+
     def parse_var_decl(self, has_let=True) -> Stmt:
         is_const = False
         if has_let:
@@ -337,7 +329,3 @@ class Parser:
         else:
             self.expect_options([[TokenType.COLON, TokenType.EQUALS], [TokenType.EQUALS]], "Expected >=< token following identifier in var declaration.")
         return VarDecl(is_const, ident, self.parse_expr())
-
-
-
-

@@ -7,7 +7,6 @@ class Env():
     usedGlobalVarNames = {}
     gotoCounter = 0
 
-
     def deklGlobalVar(self, varname: str, init=None):
         if varname in self.usedGlobalVarNames:
             raise VarError("Variable name is already used")
