@@ -86,7 +86,6 @@ class Token:
     value: str  
     type: TokenType
 
-
 def tokenize(sourceCode: str) -> List[Token]:
 
     def is_skippable(src: str) -> bool:
@@ -181,13 +180,9 @@ def tokenize(sourceCode: str) -> List[Token]:
     tokens.append(Token("EndOfFile", TokenType.EOF))
     return tokens
 
-
-
-
 def main():
     src = "let x = 5 + (7*10)"
     print(tokenize(src))
-
 
 if __name__ == "__main__":
     main()

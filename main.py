@@ -2,10 +2,6 @@ import myParser
 from functools import reduce
 from environment import Env
 
-
-
-
-
 def main():
     parser = myParser.Parser()
 
@@ -36,7 +32,6 @@ def from_to_file():
 
 def test():
     pass
-
 
 if __name__ == "__main__":
     from_to_file()
