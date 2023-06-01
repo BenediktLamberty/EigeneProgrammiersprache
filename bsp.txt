@@ -1,3 +1,6 @@
-do, then while 0 {
-    output 1
+let x = 99
+let i = 0
+while i < 99{
+    output i
+    i = i + 1
 }

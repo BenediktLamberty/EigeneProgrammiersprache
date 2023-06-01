@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import List, Tuple
 
+EXPR_EVAL_LEFT = "$s0"
+EXPR_EVAL_RIGHT = "$s1"
+
 class NullException(Exception):
     pass
 
@@ -59,8 +62,8 @@ class VarDecl(Stmt):
             env.deklGlobalVar(self.identifier, None)
             code = self.value.generate_code(env)
             code += f"""
-        lw $t8, ($sp)  # init variable {self.identifier}
-        sw $t8, {self.identifier}
+        lw {EXPR_EVAL_LEFT}, ($sp)  # init variable {self.identifier}
+        sw {EXPR_EVAL_LEFT}, {self.identifier}
             """
             return code
 
@@ -83,9 +86,9 @@ class If(Stmt):
         goto = env.getGoto()
         code = self.condition.generate_code(env)
         code += f"""
-        lw $t8, ($sp)  # check if condition
+        lw {EXPR_EVAL_LEFT}, ($sp)  # check if condition
         addi $sp, $sp, 4
-        beq $t8, $zero, ifBlockSkip{goto}
+        beq {EXPR_EVAL_LEFT}, $zero, ifBlockSkip{goto}
         """
         for stmt in self.body:
             code += stmt.generate_code(env)
@@ -140,9 +143,9 @@ startDoWhile{goto}:
             """
             code += body_code + condition_code
             code += f"""
-        lw $t8, ($sp)  # while loop condition check
+        lw {EXPR_EVAL_LEFT}, ($sp)  # while loop condition check
         addi $sp, $sp, 4
-        bne $t8, $zero, startDoWhile{goto}
+        bne {EXPR_EVAL_LEFT}, $zero, startDoWhile{goto}
             """
         else:
             code += f"""
@@ -150,9 +153,9 @@ whileCondition{goto}:
             """
             code += condition_code
             code += f"""
-        lw $t8, ($sp)  # while loop condition check
+        lw {EXPR_EVAL_LEFT}, ($sp)  # while loop condition check
         addi $sp, $sp, 4
-        beq $t8, $zero, exitWhile{goto}
+        beq {EXPR_EVAL_LEFT}, $zero, exitWhile{goto}
             """
             code += body_code
             code += f"""
@@ -175,56 +178,56 @@ class BinaryExpr(Expr):
         code = self.left.generate_code(env)
         code += self.right.generate_code(env)
 
-        code += """
-        lw $t9, ($sp)  # Binary operation
+        code += f"""
+        lw {EXPR_EVAL_RIGHT}, ($sp)  # Binary operation
         addi $sp, $sp, 4
-        lw $t8, ($sp)
+        lw {EXPR_EVAL_LEFT}, ($sp)
             """
         if self.operator == "+":
-            code += """
-        add $t8, $t8, $t9  # + operation
+            code += f"""
+        add {EXPR_EVAL_LEFT}, {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}  # + operation
                 """
         elif self.operator == "-":
-            code += """
-        sub $t8, $t8, $t9  # - operation
+            code += f"""
+        sub {EXPR_EVAL_LEFT}, {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}  # - operation
             """
         elif self.operator == "*":
-            code += """
-        mul $t8, $t8, $t9  # * operation
+            code += f"""
+        mul {EXPR_EVAL_LEFT}, {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}  # * operation
             """
         elif self.operator == "/":
-            code += """
-        div $t8, $t8, $t9  # int / operation !!!!!!!!!!!!!!!!!!!!
+            code += f"""
+        div {EXPR_EVAL_LEFT}, {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}  # int / operation !!!!!!!!!!!!!!!!!!!!
             """
         elif self.operator == "&&":
             goto = env.getGoto()
             code += f"""
-        mul $t8, $t8, $t9  # && logic operation
-        beq $t8, $zero, exitLogic{goto}
-        li $t8, 1
+        mul {EXPR_EVAL_LEFT}, {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}  # && logic operation
+        beq {EXPR_EVAL_LEFT}, $zero, exitLogic{goto}
+        li {EXPR_EVAL_LEFT}, 1
 exitLogic{goto}:
             """
         elif self.operator == "||":
             goto = env.getGoto()
             code += f"""
-        bne $t8, $zero, doOr{goto}
-        bne $t9, $zero, doOr{goto}
-        li $t8, 0
+        bne {EXPR_EVAL_LEFT}, $zero, doOr{goto}
+        bne {EXPR_EVAL_RIGHT}, $zero, doOr{goto}
+        li {EXPR_EVAL_LEFT}, 0
         b exitLogic{goto}
 doOr{goto}:
-        li $t8, 1
+        li {EXPR_EVAL_LEFT}, 1
 exitLogic{goto}:
             """
         elif self.operator == "mod":
-            code += """
-        div $t8, $t9  # mod operation
-        mfhi $t8
+            code += f"""
+        div {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}  # mod operation
+        mfhi {EXPR_EVAL_LEFT}
             """
         else:
             raise ASTError("BinaryExpr has invalid operator")
         
-        code += """
-        sw $t8, ($sp)
+        code += f"""
+        sw {EXPR_EVAL_LEFT}, ($sp)
             """
         
         return code
@@ -236,20 +239,20 @@ class UnaryExpr(Expr):
     def generate_code(self, env: Env) -> str:
         code = self.arg.generate_code(env)
         if self.operator == "-":
-            code += """
-        lw $t8, ($sp)  # Unary - operation
-        neg $t8, $t8
-        sw $t8, ($sp)
+            code += f"""
+        lw {EXPR_EVAL_LEFT}, ($sp)  # Unary - operation
+        neg {EXPR_EVAL_LEFT}, {EXPR_EVAL_LEFT}
+        sw {EXPR_EVAL_LEFT}, ($sp)
             """
         elif self.operator in ["!", "~"]:
             goto = env.getGoto()
             code += f"""
-        lw $t8, ($sp)  # Unary ! operation
-        beq $zero, $t8, negate{goto}
-        li $t8, 0
+        lw {EXPR_EVAL_LEFT}, ($sp)  # Unary ! operation
+        beq $zero, {EXPR_EVAL_LEFT}, negate{goto}
+        li {EXPR_EVAL_LEFT}, 0
         b exitNegate{goto}
 negate{goto}:
-        li $t8, 1
+        li {EXPR_EVAL_LEFT}, 1
 exitNegate{goto}:
             """
         else:
@@ -262,9 +265,9 @@ class Identifier(Expr):
     def generate_code(self, env: Env) -> str:
         env.useGlobalVar(self.symbol)
         return f"""
-        lw $t8, {self.symbol}  # Identifier {self.symbol} to stack
+        lw {EXPR_EVAL_LEFT}, {self.symbol}  # Identifier {self.symbol} to stack
         addi $sp, $sp, -4
-        sw $t8, ($sp)
+        sw {EXPR_EVAL_LEFT}, ($sp)
         """
 
 @dataclass
@@ -272,9 +275,9 @@ class NumericLiteral(Expr):
     value: float
     def generate_code(self, env: Env) -> str:
         return f"""
-        li $t8, {self.value}  # Num {self.value} to stack
+        li {EXPR_EVAL_LEFT}, {self.value}  # Num {self.value} to stack
         addi $sp, $sp, -4
-        sw $t8, ($sp)
+        sw {EXPR_EVAL_LEFT}, ($sp)
         """
 
 @dataclass
@@ -295,8 +298,8 @@ class AssignmentExpr(Expr):
         if isinstance(self.assigne, Identifier):
             env.useGlobalVar(self.assigne.symbol)
             code += f"""
-        lw $t8, ($sp)  # assign value to var {self.assigne.symbol}
-        sw $t8, {self.assigne.symbol}
+        lw {EXPR_EVAL_LEFT}, ($sp)  # assign value to var {self.assigne.symbol}
+        sw {EXPR_EVAL_LEFT}, {self.assigne.symbol}
             """
         else:
             raise ASTError("Unsupported expr as assigne")
@@ -331,44 +334,44 @@ class Comparator(Expr):
         code = self.left.generate_code(env)
         code += self.right.generate_code(env)
         goto = env.getGoto()
-        code += """
-        lw $t9, ($sp)  # comparison
+        code += f"""
+        lw {EXPR_EVAL_RIGHT}, ($sp)  # comparison
         addi $sp, $sp, 4
-        lw $t8, ($sp)
+        lw {EXPR_EVAL_LEFT}, ($sp)
             """
         if self.operator == "<":
             code += f"""
-        blt $t8, $t9, conTrue{goto}  # comparator <
+        blt {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}, conTrue{goto}  # comparator <
             """
         elif self.operator == ">":
              code += f"""
-        bgt $t8, $t9, conTrue{goto}  # comparator >
+        bgt {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}, conTrue{goto}  # comparator >
             """
         elif self.operator == "<=":
              code += f"""
-        ble $t8, $t9, conTrue{goto}  # comparator <=
+        ble {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}, conTrue{goto}  # comparator <=
             """
         elif self.operator == ">=":
              code += f"""
-        bge $t8, $t9, conTrue{goto}  # comparator >=
+        bge {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}, conTrue{goto}  # comparator >=
             """
         elif self.operator == "==":
              code += f"""
-        beq $t8, $t9, conTrue{goto}  # comparator ==
+        beq {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}, conTrue{goto}  # comparator ==
             """
         elif self.operator == "!=":
              code += f"""
-        bne $t8, $t9, conTrue{goto}  # comparator !=
+        bne {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}, conTrue{goto}  # comparator !=
             """
         else:
             raise ASTError("invalid comparator")
         code += f"""
-        li $t8, 0  # comparator descision
+        li {EXPR_EVAL_LEFT}, 0  # comparator descision
         b conExit{goto}
 conTrue{goto}:
-        li $t8, 1
+        li {EXPR_EVAL_LEFT}, 1
 conExit{goto}:
-        sw $t8, ($sp)
+        sw {EXPR_EVAL_LEFT}, ($sp)
             """
         return code
 
