@@ -73,6 +73,9 @@ class FunctionDeclaration(Stmt):
     name: str
     parameters: List[str]
     body: List[Stmt]
+    def generate_code(self, env: Env) -> str:
+        pass
+        
 
 @dataclass
 class Return(Stmt):
@@ -101,6 +104,8 @@ class If(Stmt):
 ifBlockSkip{goto}:
         """
         return code
+    def get_number_of_words(self) -> str:
+        pass
         
 
 @dataclass
@@ -117,6 +122,8 @@ class IfElifElse(Stmt):
 exitIf{goto}:
         """
         return code
+    def get_number_of_words(self) -> str:
+        pass
             
 
 @dataclass
@@ -163,6 +170,8 @@ whileCondition{goto}:
 exitWhile{goto}:
             """
         return code
+    def get_number_of_words(self) -> str:
+        pass
         
 
 @dataclass
@@ -381,6 +390,8 @@ class For(Stmt):
     end: NumericLiteral
     step: NumericLiteral
     body: List[Stmt]
+    def get_number_of_words(self) -> str:
+        pass
 
 @dataclass
 class Output(Stmt):

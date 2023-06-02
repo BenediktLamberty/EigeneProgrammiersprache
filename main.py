@@ -31,7 +31,9 @@ def from_to_file():
     file.close()
 
 def test():
-    pass
+    a = {}
+    print (a[8])
 
 if __name__ == "__main__":
-    from_to_file()
+    #from_to_file()
+    test()
