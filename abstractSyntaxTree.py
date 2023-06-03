@@ -93,7 +93,7 @@ class FunctionDeclaration(Stmt):
     parameters: List[str]
     body: List[Stmt]
     def generate_code(self, env: Env) -> str:
-        env.startFunc(self.name)
+        env.startFunc(self.name, self.parameters)
         # body
         body_code = f"""
 # Function Body of {self.name}:
@@ -149,7 +149,9 @@ class FunctionDeclaration(Stmt):
         jr $ra
 {self.name}End:
         """
-        # !!! Args ersetzen
+        # Args ersetzen
+        for i in range(len(self.parameters)):
+            code = code.replace(f"?{self.parameters[i]}", f"{8*4 + 4 + env.max_offset*4 + i*4}($fp)")
 
         env.endFunc()
         return code
@@ -355,12 +357,22 @@ exitNegate{goto}:
 class Identifier(Expr):
     symbol: str
     def generate_code(self, env: Env) -> str:
-        env.useGlobalVar(self.symbol)
-        return f"""
+        code = ""
+        var = env.useVar(self.symbol)
+        if var == None:
+            env.useGlobalVar(self.symbol)
+            code += f"""
         lw {EXPR_EVAL_LEFT}, {self.symbol}  # Identifier {self.symbol} to stack
+            """
+        else:
+            code += f"""
+        lw {EXPR_EVAL_LEFT}, {var}  # Identifier {self.symbol} to stack
+            """
+        return code + f"""
         addi $sp, $sp, -4
         sw {EXPR_EVAL_LEFT}, ($sp)
         """
+            
 
 @dataclass
 class NumericLiteral(Expr):

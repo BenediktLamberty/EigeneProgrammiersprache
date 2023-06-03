@@ -1,9 +1,8 @@
-let x = 9
-func f(y) := {
-    return g(99)
+let g = 9
+func id(x) := {
+    let h = 12
+    
+    return x + g + h
+    
 }
-
-func g(y) := {
-    return 69
-}
-output f(44)
+output id(69)

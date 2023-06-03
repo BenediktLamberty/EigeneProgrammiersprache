@@ -4,13 +4,13 @@
         # setting up first $fp
         move $fp, $sp
         
-        # Var x decl in .data with value 9
+        # Var g decl in .data with value 9
             
-        b fEnd
-f:
-# Function Preamble of f:
-        # data allocation 0 vars:
-        addi $sp, $sp, -0
+        b idEnd
+id:
+# Function Preamble of id:
+        # data allocation 1 vars:
+        addi $sp, $sp, -4
         # save $ra
         addi $sp, $sp, -4
         sw $ra, ($sp)
@@ -43,29 +43,56 @@ f:
         # $fp = $sp
         move $fp, $sp
         
-# Function Body of f:
+# Function Body of id:
         
-        # Call of func g
-        # Push $ffp
-        addi $sp, $sp, -4
-        sw $fp, ($sp)
+        # Decl local Var
             
-        # push arg 1
-                
-        li $s0, 99  # Num 99 to stack
+        li $s0, 12  # Num 12 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        # final call
-        jal g
+        lw $s0, ($sp)  # init variable h
+        addi $sp, $sp, 4
+        sw $s0, 36($fp)
+            
+        lw $s0, 40($fp)  # Identifier x to stack
+            
+        addi $sp, $sp, -4
+        sw $s0, ($sp)
         
+        lw $s0, g  # Identifier g to stack
+            
+        addi $sp, $sp, -4
+        sw $s0, ($sp)
+        
+        lw $s1, ($sp)  # Binary operation
+        addi $sp, $sp, 4
+        lw $s0, ($sp)
+            
+        add $s0, $s0, $s1  # + operation
+                
+        sw $s0, ($sp)
+            
+        lw $s0, 36($fp)  # Identifier h to stack
+            
+        addi $sp, $sp, -4
+        sw $s0, ($sp)
+        
+        lw $s1, ($sp)  # Binary operation
+        addi $sp, $sp, 4
+        lw $s0, ($sp)
+            
+        add $s0, $s0, $s1  # + operation
+                
+        sw $s0, ($sp)
+            
         # retrun call
         lw $v0, ($sp)
         addi $sp, $sp, 4
-        b fReturn
+        b idReturn
         
-        # End of func f
-fReturn:
+        # End of func id
+idReturn:
         # $ss restore
         
         lw $s0, 0($fp)
@@ -87,108 +114,28 @@ fReturn:
         # $ra restore
         lw $ra, 32($fp)
         # $sp return
-        addi $sp, $sp, 40
+        addi $sp, $sp, 44
         # restore $fp
         lw $fp, ($sp)
         # return $v0
         sw $v0, ($sp)
         # final return
         jr $ra
-fEnd:
+idEnd:
         
-        b gEnd
-g:
-# Function Preamble of g:
-        # data allocation 0 vars:
-        addi $sp, $sp, -0
-        # save $ra
+        # Call of func id
+        # Push $ffp
         addi $sp, $sp, -4
-        sw $ra, ($sp)
-        # save $ss
-        
-        addi $sp, $sp, -4
-        sw $s7, ($sp)
+        sw $fp, ($sp)
             
-        addi $sp, $sp, -4
-        sw $s6, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s5, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s4, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s3, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s2, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s1, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-            
-        # $fp = $sp
-        move $fp, $sp
-        
-# Function Body of g:
-        
+        # push arg 1
+                
         li $s0, 69  # Num 69 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        # retrun call
-        lw $v0, ($sp)
-        addi $sp, $sp, 4
-        b gReturn
-        
-        # End of func g
-gReturn:
-        # $ss restore
-        
-        lw $s0, 0($fp)
-            
-        lw $s1, 4($fp)
-            
-        lw $s2, 8($fp)
-            
-        lw $s3, 12($fp)
-            
-        lw $s4, 16($fp)
-            
-        lw $s5, 20($fp)
-            
-        lw $s6, 24($fp)
-            
-        lw $s7, 28($fp)
-            
-        # $ra restore
-        lw $ra, 32($fp)
-        # $sp return
-        addi $sp, $sp, 40
-        # restore $fp
-        lw $fp, ($sp)
-        # return $v0
-        sw $v0, ($sp)
-        # final return
-        jr $ra
-gEnd:
-        
-        # Call of func f
-        # Push $ffp
-        addi $sp, $sp, -4
-        sw $fp, ($sp)
-            
-        # push arg 1
-                
-        li $s0, 44  # Num 44 to stack
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
         # final call
-        jal f
+        jal id
         
         lw $a0, ($sp)  # outputting an int !!!
         addi $sp, $sp, 4
@@ -198,5 +145,5 @@ gEnd:
 # Global Variables
         .data
         
-        x: .word 9
+        g: .word 9
                 

@@ -31,8 +31,9 @@ def from_to_file():
     file.close()
 
 def test():
-    a = {}
-    print (a[8])
+    code = "lkajf ?x aölksdjf"
+    code = code.replace("?x", "jj")
+    print(code)
 
 if __name__ == "__main__":
     from_to_file()

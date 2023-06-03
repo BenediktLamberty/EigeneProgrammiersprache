@@ -14,10 +14,10 @@ class Env():
     in_func = None
     max_offset = 0
 
-    def startFunc(self, name:str):
+    def startFunc(self, name:str, args:List[str]):
         self.in_func = name
         self.max_offset = 0
-        self.args = set()
+        self.args = set(args)
         self.tempEnvs = [{}]
 
     def endFunc(self):
