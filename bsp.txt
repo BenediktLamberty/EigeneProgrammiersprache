@@ -1,6 +1,9 @@
-let x = 99
-let i = 0
-while i < 99{
-    output i
-    i = i + 1
+let x = 9
+func f(y) := {
+    return g(99)
 }
+
+func g(y) := {
+    return 69
+}
+output f(44)

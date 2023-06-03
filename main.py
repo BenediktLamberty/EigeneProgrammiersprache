@@ -25,7 +25,7 @@ def from_file():
 def from_to_file():
     env = Env()
     code = from_file().generate_code(env)
-    print(code)
+    #print(code)
     file = open("mips1.asm", "w")
     file.write(code)
     file.close()
@@ -35,5 +35,6 @@ def test():
     print (a[8])
 
 if __name__ == "__main__":
-    #from_to_file()
-    test()
+    from_to_file()
+    #test()
+    #from_file()
