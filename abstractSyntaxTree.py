@@ -52,7 +52,7 @@ class VarDecl(Stmt):
     def generate_code(self, env: Env) -> str:
         if env.in_func != None:
         #in func
-            env.deklLocalVar(self.identifier)
+            env.deklLocalVar(self.identifier, self.const)
             code = """
         # Decl local Var
             """
@@ -67,17 +67,17 @@ class VarDecl(Stmt):
 
         # outside func
         if isinstance(self.value, NullLiteral):
-            env.deklGlobalVar(self.identifier, None)
+            env.deklGlobalVar(self.identifier, None, self.const)
             return f"""
         # Var {self.identifier} decl in .data
             """
         elif isinstance(self.value, NumericLiteral):
-            env.deklGlobalVar(self.identifier, self.value.value)
+            env.deklGlobalVar(self.identifier, self.value.value, self.const)
             return f"""
         # Var {self.identifier} decl in .data with value {self.value.value}
             """
         else:
-            env.deklGlobalVar(self.identifier, None)
+            env.deklGlobalVar(self.identifier, None, self.const)
             code = self.value.generate_code(env)
             code += f"""
         lw {EXPR_EVAL_LEFT}, ($sp)  # init variable {self.identifier}
@@ -400,6 +400,7 @@ class AssignmentExpr(Expr):
     def generate_code(self, env: Env) -> str:
         code = self.value.generate_code(env)
         if isinstance(self.assigne, Identifier):
+            env.checkConst(self.assigne.symbol)
             var = env.useVar(self.assigne.symbol)
             if var == None:
                 env.useGlobalVar(self.assigne.symbol)

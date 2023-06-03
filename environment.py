@@ -9,6 +9,8 @@ class VarError(Exception):
 class Env():
     usedGlobalVarNames = {}
     tempEnvs = [{}]
+    tempConsts = [set()]
+    consts = set()
     args = set()
     gotoCounter = 0
     in_func = None
@@ -19,15 +21,17 @@ class Env():
         self.max_offset = 0
         self.args = set(args)
         self.tempEnvs = [{}]
+        self.tempConsts = [set()]
 
     def endFunc(self):
         self.in_func = None
         self.max_offset = 0
         self.args = set()
         self.tempEnvs = [{}]
+        self.tempConsts = [set()]
 
     
-    def deklLocalVar(self, varname:str):
+    def deklLocalVar(self, varname:str, const = False):
         if varname in self.usedGlobalVarNames:
             raise VarError("Variable name is already globally used")
         if varname in self.args:
@@ -37,12 +41,10 @@ class Env():
             local_var_names.update(temp.keys())
         if varname in local_var_names:
             raise VarError("Variable name is already locally used")
-        print(local_var_names)
         self.tempEnvs[len(self.tempEnvs)-1][varname] = len(local_var_names) + 1
         self.max_offset = max(self.max_offset, len(local_var_names) + 1)
-        a = 0
-        print(a)
-        #print(f"decl of {varname} at reg offset {len(local_var_names)}")
+        if const:
+            self.tempConsts[len(self.tempConsts)-1].add(varname)
         
     def checkArgs(self, args: List[str]):
         for arg in args:
@@ -61,9 +63,11 @@ class Env():
 
     def increase_depth(self):
         self.tempEnvs.append({})
+        self.tempConsts.append(set())
 
     def decrease_depth(self):
         self.tempEnvs.pop()
+        self.tempConsts.pop()
 
     def useVar(self, varname: str):
         if varname in self.usedGlobalVarNames:
@@ -71,11 +75,20 @@ class Env():
         if varname in self.args:
             return "?" + varname
         return f"{self.getOffsetOfLocalVar(varname)}($fp)"
+    
+    def checkConst(self, varname: str):
+        for lv in self.tempConsts:
+            if varname in lv:
+                raise VarError(f"Local Var {varname} const")
+        if varname in self.consts:
+            raise VarError(f"Global Var {varname} const")
 
-    def deklGlobalVar(self, varname: str, init=None):
+    def deklGlobalVar(self, varname: str, init=None, const=False):
         if varname in self.usedGlobalVarNames:
             raise VarError("Variable name is already used")
         self.usedGlobalVarNames[varname] = init
+        if const:
+            self.consts.add(varname)
 
     def useGlobalVar(self, varname: str):
         if varname not in self.usedGlobalVarNames:

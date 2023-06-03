@@ -4,11 +4,13 @@
         # setting up first $fp
         move $fp, $sp
         
-        b fiboEnd
-fibo:
-# Function Preamble of fibo:
-        # data allocation 3 vars:
-        addi $sp, $sp, -12
+        # Var x decl in .data with value 8
+            
+        b fEnd
+f:
+# Function Preamble of f:
+        # data allocation 2 vars:
+        addi $sp, $sp, -8
         # save $ra
         addi $sp, $sp, -4
         sw $ra, ($sp)
@@ -41,97 +43,44 @@ fibo:
         # $fp = $sp
         move $fp, $sp
         
-# Function Body of fibo:
+# Function Body of f:
         
         # Decl local Var
             
-        li $s0, 0  # Num 0 to stack
+        li $s0, 8  # Num 8 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        lw $s0, ($sp)  # init variable a
+        lw $s0, ($sp)  # init variable z
         addi $sp, $sp, 4
         sw $s0, 36($fp)
             
         # Decl local Var
             
-        li $s0, 1  # Num 1 to stack
+        li $s0, 9  # Num 9 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        lw $s0, ($sp)  # init variable b
+        lw $s0, ($sp)  # init variable u
         addi $sp, $sp, 4
         sw $s0, 40($fp)
             
-whileCondition1:
-            
-        lw $s0, 48($fp)  # Identifier x to stack
+        lw $s0, 40($fp)  # Identifier u to stack
             
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        li $s0, 0  # Num 0 to stack
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        lw $s1, ($sp)  # comparison
-        addi $sp, $sp, 4
-        lw $s0, ($sp)
-            
-        bgt $s0, $s1, conTrue2  # comparator >
-            
-        li $s0, 0  # comparator descision
-        b conExit2
-conTrue2:
-        li $s0, 1
-conExit2:
-        sw $s0, ($sp)
-            
-        lw $s0, ($sp)  # while loop condition check
-        addi $sp, $sp, 4
-        beq $s0, $zero, exitWhile1
-            
-        # Body of While Loop
-        
-        lw $s0, 48($fp)  # Identifier x to stack
-            
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        li $s0, 1  # Num 1 to stack
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        lw $s1, ($sp)  # Binary operation
-        addi $sp, $sp, 4
-        lw $s0, ($sp)
-            
-        sub $s0, $s0, $s1  # - operation
-            
-        sw $s0, ($sp)
-            
-        lw $s0, ($sp)  # assign value to var x
-        sw $s0, 48($fp)
+        lw $s0, ($sp)  # assign value to var z
+        sw $s0, 36($fp)
                 
         addi $sp, $sp, 4  # raising sp after expression
                 
-        # Decl local Var
-            
-        lw $s0, 40($fp)  # Identifier b to stack
+        lw $s0, 44($fp)  # Identifier y to stack
             
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        lw $s0, ($sp)  # init variable c
-        addi $sp, $sp, 4
-        sw $s0, 44($fp)
-            
-        lw $s0, 36($fp)  # Identifier a to stack
-            
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        lw $s0, 40($fp)  # Identifier b to stack
+        lw $s0, 36($fp)  # Identifier z to stack
             
         addi $sp, $sp, -4
         sw $s0, ($sp)
@@ -144,36 +93,13 @@ conExit2:
                 
         sw $s0, ($sp)
             
-        lw $s0, ($sp)  # assign value to var b
-        sw $s0, 40($fp)
-                
-        addi $sp, $sp, 4  # raising sp after expression
-                
-        lw $s0, 44($fp)  # Identifier c to stack
-            
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        lw $s0, ($sp)  # assign value to var a
-        sw $s0, 36($fp)
-                
-        addi $sp, $sp, 4  # raising sp after expression
-                
-        b whileCondition1  # looping while
-exitWhile1:
-            
-        lw $s0, 36($fp)  # Identifier a to stack
-            
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
         # retrun call
         lw $v0, ($sp)
         addi $sp, $sp, 4
-        b fiboReturn
+        b fReturn
         
-        # End of func fibo
-fiboReturn:
+        # End of func f
+fReturn:
         # $ss restore
         
         lw $s0, 0($fp)
@@ -195,28 +121,29 @@ fiboReturn:
         # $ra restore
         lw $ra, 32($fp)
         # $sp return
-        addi $sp, $sp, 52
+        addi $sp, $sp, 48
         # restore $fp
         lw $fp, ($sp)
         # return $v0
         sw $v0, ($sp)
         # final return
         jr $ra
-fiboEnd:
+fEnd:
         
-        # Call of func fibo
+        # Call of func f
         # Push $ffp
         addi $sp, $sp, -4
         sw $fp, ($sp)
             
         # push arg 1
                 
-        li $s0, 11  # Num 11 to stack
+        lw $s0, x  # Identifier x to stack
+            
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
         # final call
-        jal fibo
+        jal f
         
         lw $a0, ($sp)  # outputting an int !!!
         addi $sp, $sp, 4
@@ -226,3 +153,5 @@ fiboEnd:
 # Global Variables
         .data
         
+        x: .word 8
+                

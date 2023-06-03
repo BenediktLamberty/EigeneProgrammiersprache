@@ -1,13 +1,8 @@
-func fibo: x -> {
-    let a = 0
-    let b = 1
-    while x > 0 {
-        x = x - 1
-        let c = b
-        b = a + b
-        a = c
-    }
-    return a
+const x = 8
+func f: y -> {
+    let z = 8
+    const u = 9
+    z = u
+    return y + z
 }
-
-output fibo(11)
+output f(x)
