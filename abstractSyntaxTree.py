@@ -400,11 +400,18 @@ class AssignmentExpr(Expr):
     def generate_code(self, env: Env) -> str:
         code = self.value.generate_code(env)
         if isinstance(self.assigne, Identifier):
-            env.useGlobalVar(self.assigne.symbol)
-            code += f"""
+            var = env.useVar(self.assigne.symbol)
+            if var == None:
+                env.useGlobalVar(self.assigne.symbol)
+                code += f"""
         lw {EXPR_EVAL_LEFT}, ($sp)  # assign value to var {self.assigne.symbol}
         sw {EXPR_EVAL_LEFT}, {self.assigne.symbol}
-            """
+                """
+            else:
+                code += f"""
+        lw {EXPR_EVAL_LEFT}, ($sp)  # assign value to var {self.assigne.symbol}
+        sw {EXPR_EVAL_LEFT}, {var}
+                """
         else:
             raise ASTError("Unsupported expr as assigne")
         return code

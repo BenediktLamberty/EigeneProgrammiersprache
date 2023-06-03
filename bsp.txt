@@ -1,8 +1,13 @@
-let g = 9
-func id(x) := {
-    let h = 12
-    
-    return x + g + h
-    
+func fibo: x -> {
+    let a = 0
+    let b = 1
+    while x > 0 {
+        x = x - 1
+        let c = b
+        b = a + b
+        a = c
+    }
+    return a
 }
-output id(69)
+
+output fibo(11)

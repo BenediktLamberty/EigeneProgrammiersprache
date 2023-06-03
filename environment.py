@@ -57,7 +57,7 @@ class Env():
         try:
             return local_vars[varname] * 4 + 32
         except KeyError:
-            raise VarError("Local Var not defined")
+            raise VarError(f"Local Var {varname} not defined")
 
     def increase_depth(self):
         self.tempEnvs.append({})
@@ -79,7 +79,8 @@ class Env():
 
     def useGlobalVar(self, varname: str):
         if varname not in self.usedGlobalVarNames:
-            raise VarError("Variable is not declared yet")
+            msg = f"Variable {varname} is not declared yet"
+            raise VarError(msg)
         
     def getGoto(self):
         self.gotoCounter += 1
