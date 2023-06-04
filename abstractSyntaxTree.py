@@ -427,6 +427,10 @@ class ObjectLiteral(Expr):
     properties: List[Property]
 
 @dataclass
+class Array(Expr):
+    elements: List[Expr]
+
+@dataclass
 class CallExpr(Expr):
     args: List[Expr]
     caller: Expr

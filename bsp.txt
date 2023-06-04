@@ -1,8 +1,0 @@
-const x = 8
-func f: y -> {
-    let z = 8
-    const u = 9
-    z = u
-    return y + z
-}
-output f(x)

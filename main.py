@@ -36,6 +36,6 @@ def test():
     print(code)
 
 if __name__ == "__main__":
-    from_to_file()
+    #from_to_file()
     #test()
-    #from_file()
+    from_file()
