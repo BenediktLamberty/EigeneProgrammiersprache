@@ -427,7 +427,7 @@ class ObjectLiteral(Expr):
     properties: List[Property]
 
 @dataclass
-class Array(Expr):
+class LinkedList(Expr):
     elements: List[Expr]
 
 @dataclass
