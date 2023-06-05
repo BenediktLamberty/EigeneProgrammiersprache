@@ -1,2 +1,2 @@
-let list = [x, 1+1, [1,2,3]]
-list[1]
+let x = []
+((x add a) add b) add c

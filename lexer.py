@@ -58,6 +58,12 @@ KEYWORDS = {
     "const": TokenType.CONST,
 
     "mod": TokenType.BINARY_OPERATOR,
+    "add": TokenType.BINARY_OPERATOR,
+    "push": TokenType.BINARY_OPERATOR,
+
+    "pop": TokenType.BINARY_OPERATOR,
+    "copy":TokenType.BINARY_OPERATOR,
+    "len": TokenType.BINARY_OPERATOR,
 
     "Null": TokenType.NULL,
     "True": TokenType.BOOL,

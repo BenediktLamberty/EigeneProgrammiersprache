@@ -429,6 +429,10 @@ class ObjectLiteral(Expr):
 @dataclass
 class LinkedList(Expr):
     elements: List[Expr]
+    def generate_code(self, env: Env) -> str:
+        # !!!!!!!!!!------------------------------------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        pass
+        
 
 @dataclass
 class CallExpr(Expr):
