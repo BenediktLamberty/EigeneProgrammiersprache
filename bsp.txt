@@ -1,2 +1,12 @@
-let x = [0, 1, 2, 3]
-output x
+
+func main() := {
+    let x = [100, 111, 222, 333, 444]
+    x[2] = 69
+    output x[0]
+    output x[1]
+    output x[2]
+    output x[3]
+    output x[4]
+}
+
+main()

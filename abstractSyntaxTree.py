@@ -7,8 +7,11 @@ from typing import List, Tuple
 
 EXPR_EVAL_LEFT = "$s0"
 EXPR_EVAL_RIGHT = "$s1"
-TEMP_PTR = "$s2"
+TEMP_PTR = "$t2"
+SAVE_PTR = "$s2"
+
 TEMP = "$t0"
+TEMP_ITER = "$t1"
 
 class NullException(Exception):
     pass
@@ -415,6 +418,17 @@ class AssignmentExpr(Expr):
         lw {EXPR_EVAL_LEFT}, ($sp)  # assign value to var {self.assigne.symbol}
         sw {EXPR_EVAL_LEFT}, {var}
                 """
+        elif isinstance(self.assigne, MemberExpr) and isinstance(self.assigne.obj, Identifier):
+            env.checkConst(self.assigne.obj.symbol)
+            var = env.useVar(self.assigne.obj.symbol)
+            code += self.assigne.generate_code(env, is_left=True)
+            code += f"""
+        # store value at ptr
+        lw {TEMP_PTR}, ($sp)
+        addi $sp, $sp, 4
+        lw {TEMP}, ($sp)
+        sw {TEMP}, ({TEMP_PTR})
+                """
         else:
             raise ASTError("Unsupported expr as assigne")
         return code
@@ -440,41 +454,49 @@ class LinkedList(Expr):
         sw $zero, ($sp)
             """
         else:
-            code = f"""
+            goto = env.getGoto()
+            code = """
 # list decl and init
-        # malloc
-        li $a0, 8
-        li $v0, 9
-        syscall
-        # list pointer to reg and stack
-        move {TEMP_PTR}, $v0
-        addi $sp, $sp, -4
-        sw $v0, ($sp)
             """
-            for elem in self.elements[:-1]:
+            for elem in reversed(self.elements):
                 code += elem.generate_code(env)
-                code += f"""
-        # save elem
-        lw {TEMP} ($sp)
-        addi $sp, $sp, 4
-        sw {TEMP} ({TEMP_PTR})
+            code += f"""
+        # first malloc
         # malloc
         li $a0, 8
         li $v0, 9
         syscall
-        # link memory
-        sw $v0, 4({TEMP_PTR})
-        # save ptr
-        move {TEMP_PTR}, $v0 
-                """
-            code += self.elements[-1].generate_code(env)
-            code += f"""
-        # save last elem
-        lw {TEMP} ($sp)
+        # list pointer to reg
+        move {TEMP_PTR}, $v0
+        move {SAVE_PTR}, $v0
+        
+        # fill list
+        li {TEMP_ITER}, {len(self.elements)-1}
+startFill{goto}:
+        ble {TEMP_ITER}, $zero, endFill{goto}
+        addi {TEMP_ITER}, {TEMP_ITER}, -1
+        # save elem
+        lw {TEMP}, ($sp)
         addi $sp, $sp, 4
         sw {TEMP}, ({TEMP_PTR})
-        # add zero pointer
-        sw $zero, 4({TEMP_PTR})
+        # malloc
+        li $a0, 8
+        li $v0, 9
+        syscall
+        # link list
+        sw $v0, 4({TEMP_PTR})
+        move {TEMP_PTR}, $v0
+        b startFill{goto}
+endFill{goto}:  
+        # save elem
+        lw {TEMP}, ($sp)
+        addi $sp, $sp, 4
+        sw {TEMP}, ({TEMP_PTR})
+        # null pointer
+        sw $zero, 4({TEMP_PTR}) 
+        # list ptr to stack
+        addi $sp, $sp, -4
+        sw {SAVE_PTR}, ($sp)
             """
             return code
 
@@ -511,6 +533,43 @@ class MemberExpr(Expr):
     obj: Expr
     property: Expr
     computed: bool
+    def generate_code(self, env: Env, is_left=False) -> str:
+        if self.computed:
+            goto = env.getGoto()
+            code = """
+        #list member expr
+            """
+            code += self.obj.generate_code(env)
+            code += self.property.generate_code(env)
+            code += f"""
+        lw {TEMP_ITER}, ($sp)
+        addi $sp, $sp, 4
+        lw {TEMP_PTR}, ($sp)
+        addi $sp, $sp, 4
+        # traverce
+startTrav{goto}:
+        ble {TEMP_ITER}, $zero, endTrav{goto}
+        addi {TEMP_ITER}, {TEMP_ITER}, -1
+        lw {TEMP_PTR}, 4({TEMP_PTR})
+        b startTrav{goto}
+endTrav{goto}:
+            """
+            if is_left:
+                code += f"""
+        # push pointer to stack
+        addi $sp, $sp, -4
+        sw {TEMP_PTR}, ($sp)
+                """
+            else:
+                code += f"""
+        # push value to stack
+        lw {TEMP}, ({TEMP_PTR})
+        addi $sp, $sp, -4
+        sw {TEMP}, ($sp)
+                """
+            return code
+        else:
+            raise Exception("Not implemented yet")
 
 @dataclass
 class Comparator(Expr):
