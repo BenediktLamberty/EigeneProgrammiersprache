@@ -7,6 +7,8 @@ from typing import List, Tuple
 
 EXPR_EVAL_LEFT = "$s0"
 EXPR_EVAL_RIGHT = "$s1"
+TEMP_PTR = "$s2"
+TEMP = "$t0"
 
 class NullException(Exception):
     pass
@@ -81,9 +83,9 @@ class VarDecl(Stmt):
             code = self.value.generate_code(env)
             code += f"""
         lw {EXPR_EVAL_LEFT}, ($sp)  # init variable {self.identifier}
+        addi $sp, $sp, 4
         sw {EXPR_EVAL_LEFT}, {self.identifier}
             """
-            #Problem könnte auftreten: $sp nicht hochgeschoben!
             return code
 
 
@@ -430,8 +432,52 @@ class ObjectLiteral(Expr):
 class LinkedList(Expr):
     elements: List[Expr]
     def generate_code(self, env: Env) -> str:
-        # !!!!!!!!!!------------------------------------------!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        pass
+        if len(self.elements) == 0:
+            return f"""
+# list decl
+        # zero pointer to stack
+        addi $sp, $sp, -4
+        sw $zero, ($sp)
+            """
+        else:
+            code = f"""
+# list decl and init
+        # malloc
+        li $a0, 8
+        li $v0, 9
+        syscall
+        # list pointer to reg and stack
+        move {TEMP_PTR}, $v0
+        addi $sp, $sp, -4
+        sw $v0, ($sp)
+            """
+            for elem in self.elements[:-1]:
+                code += elem.generate_code(env)
+                code += f"""
+        # save elem
+        lw {TEMP} ($sp)
+        addi $sp, $sp, 4
+        sw {TEMP} ({TEMP_PTR})
+        # malloc
+        li $a0, 8
+        li $v0, 9
+        syscall
+        # link memory
+        sw $v0, 4({TEMP_PTR})
+        # save ptr
+        move {TEMP_PTR}, $v0 
+                """
+            code += self.elements[-1].generate_code(env)
+            code += f"""
+        # save last elem
+        lw {TEMP} ($sp)
+        addi $sp, $sp, 4
+        sw {TEMP}, ({TEMP_PTR})
+        # add zero pointer
+        sw $zero, 4({TEMP_PTR})
+            """
+            return code
+
         
 
 @dataclass

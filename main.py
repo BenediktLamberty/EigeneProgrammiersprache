@@ -31,11 +31,10 @@ def from_to_file():
     file.close()
 
 def test():
-    code = "lkajf ?x aölksdjf"
-    code = code.replace("?x", "jj")
-    print(code)
+    a = [1, 2, 3]
+    print( a[-1])
 
 if __name__ == "__main__":
-    #from_to_file()
+    from_to_file()
     #test()
-    from_file()
+    #from_file()

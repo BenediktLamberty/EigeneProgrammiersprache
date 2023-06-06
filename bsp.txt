@@ -1,2 +1,2 @@
-let x = []
-((x add a) add b) add c
+let x = [0, 1, 2, 3]
+output x
