@@ -65,16 +65,21 @@ Functions can take an infinite number of arguments and return one value. Functio
 
 #### Lists
 
-Lists are not fully implemented yet!
-
-* Decl and Init: ´let x = []´, ´let x = [1, 2, 3]´
-* Getting an element: ´y = a[4]´
+* Decl and Init: ´let a = []´, ´let a = [1, 2, 3]´
+* Getting an element: ´b = a[4]´
 * Reassigning an element: ´a[4] = y´
-* push and pop coming soon
-
-
+* Binary operators:
+    * Use ´push´ to append a list: ´a push 4´ (returns the appended list)
+    * pop coming soon
+    * Use ´add´ to append a list by a second list: ´a add b´ (returns the appended list)
+    * equals coming soon
+    * in coming soon
+* Unary operators: 
+    * ´len´ yields the length of the list: ´let lenOfA = len a´
+    * ´copy´ returns a pointer to a copy of the list: ´let copyOfA = copy a´
 
 If you find any bugs or want to share your opinion about this project, feel free to open a discussion or issue. 
+And sorry if my code is full of mixed German and English.
 
 
 
