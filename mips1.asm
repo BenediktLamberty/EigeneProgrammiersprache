@@ -4,66 +4,29 @@
         # setting up first $fp
         move $fp, $sp
         
-        b mainEnd
-main:
-# Function Preamble of main:
-        # data allocation 1 vars:
-        addi $sp, $sp, -4
-        # save $ra
-        addi $sp, $sp, -4
-        sw $ra, ($sp)
-        # save $ss
-        
-        addi $sp, $sp, -4
-        sw $s7, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s6, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s5, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s4, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s3, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s2, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s1, ($sp)
-            
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-            
-        # $fp = $sp
-        move $fp, $sp
-        
-# Function Body of main:
-        
-        # Decl local Var
-            
 # list decl and init
             
-        li $s0, 444  # Num 444 to stack
+        li $s0, 5  # Num 5 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        li $s0, 333  # Num 333 to stack
+        li $s0, 4  # Num 4 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        li $s0, 222  # Num 222 to stack
+        li $s0, 3  # Num 3 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        li $s0, 111  # Num 111 to stack
+        li $s0, 2  # Num 2 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        li $s0, 100  # Num 100 to stack
+        li $s0, 1  # Num 1 to stack
+        addi $sp, $sp, -4
+        sw $s0, ($sp)
+        
+        li $s0, 0  # Num 0 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
@@ -77,7 +40,7 @@ main:
         move $s2, $v0
         
         # fill list
-        li $t1, 4
+        li $t1, 5
 startFill1:
         ble $t1, $zero, endFill1
         addi $t1, $t1, -1
@@ -106,121 +69,64 @@ endFill1:
             
         lw $s0, ($sp)  # init variable x
         addi $sp, $sp, 4
-        sw $s0, 36($fp)
+        sw $s0, x
             
-        li $s0, 69  # Num 69 to stack
+        # Var i decl in .data with value 0
+            
+whileCondition2:
+            
+        lw $s0, i  # Identifier i to stack
+            
         addi $sp, $sp, -4
         sw $s0, ($sp)
+        
+        lw $s0, x  # Identifier x to stack
+            
+        addi $sp, $sp, -4
+        sw $s0, ($sp)
+        
+        move $t0, $zero
+        lw $s2, ($sp)
+        addi $sp, $sp, 4
+        beq $s2, $zero, travEnd3
+travStart3:
+        addi $t0, $t0, 1
+        lw $t2, 4($s2)
+        beq $t2, $zero, travEnd3
+        move $s2, $t2
+        b travStart3
+travEnd3:
+        addi $sp, $sp, -4
+        sw $t0 ($sp)
+            
+        lw $s1, ($sp)  # comparison
+        addi $sp, $sp, 4
+        lw $s0, ($sp)
+            
+        blt $s0, $s1, conTrue4  # comparator <
+            
+        li $s0, 0  # comparator descision
+        b conExit4
+conTrue4:
+        li $s0, 1
+conExit4:
+        sw $s0, ($sp)
+            
+        lw $s0, ($sp)  # while loop condition check
+        addi $sp, $sp, 4
+        beq $s0, $zero, exitWhile2
+            
+        # Body of While Loop
         
         #list member expr
             
-        lw $s0, 36($fp)  # Identifier x to stack
+        lw $s0, x  # Identifier x to stack
             
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        li $s0, 2  # Num 2 to stack
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        lw $t1, ($sp)
-        addi $sp, $sp, 4
-        lw $t2, ($sp)
-        addi $sp, $sp, 4
-        # traverce
-startTrav2:
-        ble $t1, $zero, endTrav2
-        addi $t1, $t1, -1
-        lw $t2, 4($t2)
-        b startTrav2
-endTrav2:
+        lw $s0, i  # Identifier i to stack
             
-        # push pointer to stack
-        addi $sp, $sp, -4
-        sw $t2, ($sp)
-                
-        # store value at ptr
-        lw $t2, ($sp)
-        addi $sp, $sp, 4
-        lw $t0, ($sp)
-        sw $t0, ($t2)
-                
-        addi $sp, $sp, 4  # raising sp after expression
-                
-        #list member expr
-            
-        lw $s0, 36($fp)  # Identifier x to stack
-            
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        li $s0, 0  # Num 0 to stack
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        lw $t1, ($sp)
-        addi $sp, $sp, 4
-        lw $t2, ($sp)
-        addi $sp, $sp, 4
-        # traverce
-startTrav3:
-        ble $t1, $zero, endTrav3
-        addi $t1, $t1, -1
-        lw $t2, 4($t2)
-        b startTrav3
-endTrav3:
-            
-        # push value to stack
-        lw $t0, ($t2)
-        addi $sp, $sp, -4
-        sw $t0, ($sp)
-                
-        lw $a0, ($sp)  # outputting an int !!!
-        addi $sp, $sp, 4
-        li $v0, 1
-        syscall
-        
-        #list member expr
-            
-        lw $s0, 36($fp)  # Identifier x to stack
-            
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        li $s0, 1  # Num 1 to stack
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        lw $t1, ($sp)
-        addi $sp, $sp, 4
-        lw $t2, ($sp)
-        addi $sp, $sp, 4
-        # traverce
-startTrav4:
-        ble $t1, $zero, endTrav4
-        addi $t1, $t1, -1
-        lw $t2, 4($t2)
-        b startTrav4
-endTrav4:
-            
-        # push value to stack
-        lw $t0, ($t2)
-        addi $sp, $sp, -4
-        sw $t0, ($sp)
-                
-        lw $a0, ($sp)  # outputting an int !!!
-        addi $sp, $sp, 4
-        li $v0, 1
-        syscall
-        
-        #list member expr
-            
-        lw $s0, 36($fp)  # Identifier x to stack
-            
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        li $s0, 2  # Num 2 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
@@ -246,114 +152,35 @@ endTrav5:
         li $v0, 1
         syscall
         
-        #list member expr
-            
-        lw $s0, 36($fp)  # Identifier x to stack
+        lw $s0, i  # Identifier i to stack
             
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        li $s0, 3  # Num 3 to stack
+        li $s0, 1  # Num 1 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
         
-        lw $t1, ($sp)
+        lw $s1, ($sp)  # Binary operation
         addi $sp, $sp, 4
-        lw $t2, ($sp)
-        addi $sp, $sp, 4
-        # traverce
-startTrav6:
-        ble $t1, $zero, endTrav6
-        addi $t1, $t1, -1
-        lw $t2, 4($t2)
-        b startTrav6
-endTrav6:
+        lw $s0, ($sp)
             
-        # push value to stack
-        lw $t0, ($t2)
-        addi $sp, $sp, -4
-        sw $t0, ($sp)
+        add $s0, $s0, $s1  # + operation
                 
-        lw $a0, ($sp)  # outputting an int !!!
-        addi $sp, $sp, 4
-        li $v0, 1
-        syscall
-        
-        #list member expr
-            
-        lw $s0, 36($fp)  # Identifier x to stack
-            
-        addi $sp, $sp, -4
         sw $s0, ($sp)
-        
-        li $s0, 4  # Num 4 to stack
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        lw $t1, ($sp)
-        addi $sp, $sp, 4
-        lw $t2, ($sp)
-        addi $sp, $sp, 4
-        # traverce
-startTrav7:
-        ble $t1, $zero, endTrav7
-        addi $t1, $t1, -1
-        lw $t2, 4($t2)
-        b startTrav7
-endTrav7:
             
-        # push value to stack
-        lw $t0, ($t2)
-        addi $sp, $sp, -4
-        sw $t0, ($sp)
+        lw $s0, ($sp)  # assign value to var i
+        sw $s0, i
                 
-        lw $a0, ($sp)  # outputting an int !!!
-        addi $sp, $sp, 4
-        li $v0, 1
-        syscall
-        
-        # End of func main
-mainReturn:
-        # $ss restore
-        
-        lw $s0, 0($fp)
-            
-        lw $s1, 4($fp)
-            
-        lw $s2, 8($fp)
-            
-        lw $s3, 12($fp)
-            
-        lw $s4, 16($fp)
-            
-        lw $s5, 20($fp)
-            
-        lw $s6, 24($fp)
-            
-        lw $s7, 28($fp)
-            
-        # $ra restore
-        lw $ra, 32($fp)
-        # $sp return
-        addi $sp, $sp, 40
-        # restore $fp
-        lw $fp, ($sp)
-        # return $v0
-        sw $v0, ($sp)
-        # final return
-        jr $ra
-mainEnd:
-        
-        # Call of func main
-        # Push $ffp
-        addi $sp, $sp, -4
-        sw $fp, ($sp)
-            
-        # final call
-        jal main
-        
         addi $sp, $sp, 4  # raising sp after expression
                 
+        b whileCondition2  # looping while
+exitWhile2:
+            
 # Global Variables
         .data
         
+        x: .space 4
+                
+        i: .word 0
+                

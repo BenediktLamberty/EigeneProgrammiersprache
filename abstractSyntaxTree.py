@@ -9,6 +9,7 @@ EXPR_EVAL_LEFT = "$s0"
 EXPR_EVAL_RIGHT = "$s1"
 TEMP_PTR = "$t2"
 SAVE_PTR = "$s2"
+NOT_SAVE = "$s3"
 
 TEMP = "$t0"
 TEMP_ITER = "$t1"
@@ -322,6 +323,71 @@ exitLogic{goto}:
         div {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}  # mod operation
         mfhi {EXPR_EVAL_LEFT}
             """
+        elif self.operator == "push":
+            goto = env.getGoto()
+            code += f"""
+        # malloc
+        li $a0, 8
+	    li $v0, 9 
+	    syscall
+        # save new elem
+        sw {EXPR_EVAL_RIGHT}, ($v0)
+        sw $zero, 4($v0)
+        # push to list
+        # traverce list
+        beq {EXPR_EVAL_LEFT}, $zero, skip{goto}
+        move {SAVE_PTR}, {EXPR_EVAL_LEFT}
+travStart{goto}:
+        lw {TEMP_PTR}, 4({SAVE_PTR})
+        beq {TEMP_PTR}, $zero, travEnd{goto}
+        move {SAVE_PTR}, {TEMP_PTR}
+        b travStart{goto}
+travEnd{goto}:
+        # link
+        sw $v0, 4({SAVE_PTR})
+        b skipSkip{goto}
+skip{goto}:
+        addi $sp, $sp, -4
+        sw $v0, ($sp)
+        """
+            code += AssignmentExpr(assigne=self.left, value=Nothing()).generate_code(env)
+            code += f"""
+        move {EXPR_EVAL_LEFT}, $v0 
+        addi $sp, $sp, 4
+skipSkip{goto}:
+            """
+        elif self.operator == "add":
+            goto = env.getGoto()
+            code += f"""
+        # adding two lists
+        # case left is empty
+        bne {EXPR_EVAL_LEFT}, $zero, normalTrav{goto}
+            """
+            # case: First list is empty => Nullpointer!
+            code += AssignmentExpr(assigne=self.left, value=UnaryExpr(arg=self.right, operator="copy")).generate_code(env)
+            # case: First list with elems
+            code += f"""
+        b addEnd{goto}
+normalTrav{goto}:
+        move {NOT_SAVE}, {EXPR_EVAL_LEFT}
+        """
+            code += UnaryExpr(arg=self.right, operator="copy").generate_code(env)
+            code += f"""
+        # travList
+        move {EXPR_EVAL_LEFT}, {NOT_SAVE}
+        move {SAVE_PTR}, {EXPR_EVAL_LEFT}
+travStart{goto}:
+        lw {TEMP_PTR}, 4({SAVE_PTR})
+        beq {TEMP_PTR}, $zero, travEnd{goto}
+        move {SAVE_PTR}, {TEMP_PTR}
+        b travStart{goto}
+travEnd{goto}:
+        # link two lists
+        lw {TEMP}, ($sp)
+        addi $sp, $sp, 4
+        sw {TEMP}, 4({SAVE_PTR})
+addEnd{goto}:
+            """
         else:
             raise ASTError("BinaryExpr has invalid operator")
         
@@ -353,6 +419,74 @@ class UnaryExpr(Expr):
 negate{goto}:
         li {EXPR_EVAL_LEFT}, 1
 exitNegate{goto}:
+            """
+        elif self.operator == "copy":
+            goto = env.getGoto()
+            org_list_ptr = EXPR_EVAL_RIGHT
+            temp_org_ptr = TEMP_PTR
+            new_list_ptr = SAVE_PTR
+            temp_value = TEMP
+            code += f"""
+        # load org list pointer
+        lw {org_list_ptr}, ($sp)
+        addi $sp, $sp, 4
+        # end if nullpointer
+        bne {org_list_ptr}, $zero, skipPushNull{goto}
+        addi $sp, $sp, -4
+        sw $zero, ($sp)
+        b endCopy{goto}
+skipPushNull{goto}:
+        # first malloc
+        li $a0, 8
+	    li $v0, 9 
+	    syscall
+        # saving new list ptr and pushing on stack
+        move {new_list_ptr}, $v0
+        addi $sp, $sp, -4
+        sw $v0, ($sp)
+        # trav org list and copy to new
+travStart{goto}:
+        # check if at end
+        lw {temp_org_ptr}, 4({org_list_ptr})
+        beq {temp_org_ptr}, $zero, travEnd{goto}
+        # copy value
+        lw {temp_value}, ({org_list_ptr})
+        sw {temp_value}, ({new_list_ptr})
+        # advance org ptr
+        move {org_list_ptr}, {temp_org_ptr}
+        # malloc
+        li $a0, 8
+	    li $v0, 9 
+	    syscall
+        # save new pointer in memory and reg
+        sw $v0, 4({new_list_ptr})
+        move {new_list_ptr}, $v0
+        b travStart{goto}
+
+travEnd{goto}:
+        # final elem copy
+        lw {temp_value}, ({org_list_ptr})
+        sw {temp_value}, ({new_list_ptr})
+        sw $zero, 4({new_list_ptr})
+
+endCopy{goto}:
+            """
+        elif self.operator == "len":
+            goto = env.getGoto()
+            code += f"""
+        move {TEMP}, $zero
+        lw {SAVE_PTR}, ($sp)
+        addi $sp, $sp, 4
+        beq {SAVE_PTR}, $zero, travEnd{goto}
+travStart{goto}:
+        addi {TEMP}, {TEMP}, 1
+        lw {TEMP_PTR}, 4({SAVE_PTR})
+        beq {TEMP_PTR}, $zero, travEnd{goto}
+        move {SAVE_PTR}, {TEMP_PTR}
+        b travStart{goto}
+travEnd{goto}:
+        addi $sp, $sp, -4
+        sw {TEMP} ($sp)
             """
         else:
             raise ASTError("UnaryExpr has invalid operator")
@@ -430,7 +564,8 @@ class AssignmentExpr(Expr):
         sw {TEMP}, ({TEMP_PTR})
                 """
         else:
-            raise ASTError("Unsupported expr as assigne")
+            #raise ASTError("Unsupported expr as assigne")
+            pass
         return code
 
 @dataclass
@@ -640,3 +775,8 @@ class Output(Stmt):
         syscall
         """
         return code
+    
+@dataclass
+class Nothing(Expr):
+    def generate_code(self, env: Env) -> str:
+        return ""

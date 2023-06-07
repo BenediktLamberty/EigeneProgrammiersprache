@@ -225,9 +225,9 @@ class Parser:
     
     def parse_push_expr(self) -> Expr:
         left = self.parse_additive_expr()
-        while self.tokens[0].value in ["add", "push"] and self.tokens[0].type == TokenType.BINARY_OPERATOR:
+        while self.tokens[0].value in ["add", "push", "in"] and self.tokens[0].type == TokenType.BINARY_OPERATOR:
             operator = self.eat().value
-            right = self.parse_push_expr()
+            right = self.parse_expr()
             left = BinaryExpr(left, right, operator)
         return left
 

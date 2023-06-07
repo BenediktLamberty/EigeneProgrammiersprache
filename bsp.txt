@@ -1,4 +1,6 @@
-
-func main: () -> {
-    output 1
+let x = [0, 1, 2, 3, 4, 5]
+let i = 0
+while i < len x {
+    output x[i]
+    i = i + 1
 }
