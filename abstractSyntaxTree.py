@@ -7,6 +7,12 @@ from typing import List, Tuple
 
 EXPR_EVAL_LEFT = "$s0"
 EXPR_EVAL_RIGHT = "$s1"
+TEMP_PTR = "$t2"
+SAVE_PTR = "$s2"
+NOT_SAVE = "$s3"
+
+TEMP = "$t0"
+TEMP_ITER = "$t1"
 
 class NullException(Exception):
     pass
@@ -81,9 +87,9 @@ class VarDecl(Stmt):
             code = self.value.generate_code(env)
             code += f"""
         lw {EXPR_EVAL_LEFT}, ($sp)  # init variable {self.identifier}
+        addi $sp, $sp, 4
         sw {EXPR_EVAL_LEFT}, {self.identifier}
             """
-            #Problem könnte auftreten: $sp nicht hochgeschoben!
             return code
 
 
@@ -317,6 +323,71 @@ exitLogic{goto}:
         div {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}  # mod operation
         mfhi {EXPR_EVAL_LEFT}
             """
+        elif self.operator == "push":
+            goto = env.getGoto()
+            code += f"""
+        # malloc
+        li $a0, 8
+	    li $v0, 9 
+	    syscall
+        # save new elem
+        sw {EXPR_EVAL_RIGHT}, ($v0)
+        sw $zero, 4($v0)
+        # push to list
+        # traverce list
+        beq {EXPR_EVAL_LEFT}, $zero, skip{goto}
+        move {SAVE_PTR}, {EXPR_EVAL_LEFT}
+travStart{goto}:
+        lw {TEMP_PTR}, 4({SAVE_PTR})
+        beq {TEMP_PTR}, $zero, travEnd{goto}
+        move {SAVE_PTR}, {TEMP_PTR}
+        b travStart{goto}
+travEnd{goto}:
+        # link
+        sw $v0, 4({SAVE_PTR})
+        b skipSkip{goto}
+skip{goto}:
+        addi $sp, $sp, -4
+        sw $v0, ($sp)
+        """
+            code += AssignmentExpr(assigne=self.left, value=Nothing()).generate_code(env)
+            code += f"""
+        move {EXPR_EVAL_LEFT}, $v0 
+        addi $sp, $sp, 4
+skipSkip{goto}:
+            """
+        elif self.operator == "add":
+            goto = env.getGoto()
+            code += f"""
+        # adding two lists
+        # case left is empty
+        bne {EXPR_EVAL_LEFT}, $zero, normalTrav{goto}
+            """
+            # case: First list is empty => Nullpointer!
+            code += AssignmentExpr(assigne=self.left, value=UnaryExpr(arg=self.right, operator="copy")).generate_code(env)
+            # case: First list with elems
+            code += f"""
+        b addEnd{goto}
+normalTrav{goto}:
+        move {NOT_SAVE}, {EXPR_EVAL_LEFT}
+        """
+            code += UnaryExpr(arg=self.right, operator="copy").generate_code(env)
+            code += f"""
+        # travList
+        move {EXPR_EVAL_LEFT}, {NOT_SAVE}
+        move {SAVE_PTR}, {EXPR_EVAL_LEFT}
+travStart{goto}:
+        lw {TEMP_PTR}, 4({SAVE_PTR})
+        beq {TEMP_PTR}, $zero, travEnd{goto}
+        move {SAVE_PTR}, {TEMP_PTR}
+        b travStart{goto}
+travEnd{goto}:
+        # link two lists
+        lw {TEMP}, ($sp)
+        addi $sp, $sp, 4
+        sw {TEMP}, 4({SAVE_PTR})
+addEnd{goto}:
+            """
         else:
             raise ASTError("BinaryExpr has invalid operator")
         
@@ -348,6 +419,98 @@ class UnaryExpr(Expr):
 negate{goto}:
         li {EXPR_EVAL_LEFT}, 1
 exitNegate{goto}:
+            """
+        elif self.operator == "copy":
+            goto = env.getGoto()
+            org_list_ptr = EXPR_EVAL_RIGHT
+            temp_org_ptr = TEMP_PTR
+            new_list_ptr = SAVE_PTR
+            temp_value = TEMP
+            code += f"""
+        # load org list pointer
+        lw {org_list_ptr}, ($sp)
+        addi $sp, $sp, 4
+        # end if nullpointer
+        bne {org_list_ptr}, $zero, skipPushNull{goto}
+        addi $sp, $sp, -4
+        sw $zero, ($sp)
+        b endCopy{goto}
+skipPushNull{goto}:
+        # first malloc
+        li $a0, 8
+	    li $v0, 9 
+	    syscall
+        # saving new list ptr and pushing on stack
+        move {new_list_ptr}, $v0
+        addi $sp, $sp, -4
+        sw $v0, ($sp)
+        # trav org list and copy to new
+travStart{goto}:
+        # check if at end
+        lw {temp_org_ptr}, 4({org_list_ptr})
+        beq {temp_org_ptr}, $zero, travEnd{goto}
+        # copy value
+        lw {temp_value}, ({org_list_ptr})
+        sw {temp_value}, ({new_list_ptr})
+        # advance org ptr
+        move {org_list_ptr}, {temp_org_ptr}
+        # malloc
+        li $a0, 8
+	    li $v0, 9 
+	    syscall
+        # save new pointer in memory and reg
+        sw $v0, 4({new_list_ptr})
+        move {new_list_ptr}, $v0
+        b travStart{goto}
+
+travEnd{goto}:
+        # final elem copy
+        lw {temp_value}, ({org_list_ptr})
+        sw {temp_value}, ({new_list_ptr})
+        sw $zero, 4({new_list_ptr})
+
+endCopy{goto}:
+            """
+        elif self.operator == "len":
+            goto = env.getGoto()
+            code += f"""
+        move {TEMP}, $zero
+        lw {SAVE_PTR}, ($sp)
+        addi $sp, $sp, 4
+        beq {SAVE_PTR}, $zero, travEnd{goto}
+travStart{goto}:
+        addi {TEMP}, {TEMP}, 1
+        lw {TEMP_PTR}, 4({SAVE_PTR})
+        beq {TEMP_PTR}, $zero, travEnd{goto}
+        move {SAVE_PTR}, {TEMP_PTR}
+        b travStart{goto}
+travEnd{goto}:
+        addi $sp, $sp, -4
+        sw {TEMP} ($sp)
+            """
+        elif self.operator == "pop":
+            goto = env.getGoto()
+            list_ptr = EXPR_EVAL_RIGHT
+            last_ptr = SAVE_PTR
+            temp_ptr = TEMP_PTR
+            pop_value = TEMP
+            code += f"""
+        lw {list_ptr}, ($sp)
+        addi $sp, $sp, 4
+        # travList
+travStart{goto}:
+        lw {temp_ptr}, 4({list_ptr})
+        beq {temp_ptr}, $zero, travEnd{goto}
+        move {last_ptr}, {list_ptr}
+        move {list_ptr}, {temp_ptr}
+        b travStart{goto}
+travEnd{goto}:
+        # poped value on stack
+        lw {pop_value}, ({list_ptr})
+        addi $sp, $sp, -4
+        sw {pop_value}, ($sp)
+        # unlink list
+        sw $zero, 4({last_ptr})
             """
         else:
             raise ASTError("UnaryExpr has invalid operator")
@@ -413,8 +576,20 @@ class AssignmentExpr(Expr):
         lw {EXPR_EVAL_LEFT}, ($sp)  # assign value to var {self.assigne.symbol}
         sw {EXPR_EVAL_LEFT}, {var}
                 """
+        elif isinstance(self.assigne, MemberExpr) and isinstance(self.assigne.obj, Identifier):
+            env.checkConst(self.assigne.obj.symbol)
+            var = env.useVar(self.assigne.obj.symbol)
+            code += self.assigne.generate_code(env, is_left=True)
+            code += f"""
+        # store value at ptr
+        lw {TEMP_PTR}, ($sp)
+        addi $sp, $sp, 4
+        lw {TEMP}, ($sp)
+        sw {TEMP}, ({TEMP_PTR})
+                """
         else:
-            raise ASTError("Unsupported expr as assigne")
+            #raise ASTError("Unsupported expr as assigne")
+            pass
         return code
 
 @dataclass
@@ -425,6 +600,66 @@ class Property(Expr):
 @dataclass
 class ObjectLiteral(Expr):
     properties: List[Property]
+
+@dataclass
+class LinkedList(Expr):
+    elements: List[Expr]
+    def generate_code(self, env: Env) -> str:
+        if len(self.elements) == 0:
+            return f"""
+# list decl
+        # zero pointer to stack
+        addi $sp, $sp, -4
+        sw $zero, ($sp)
+            """
+        else:
+            goto = env.getGoto()
+            code = """
+# list decl and init
+            """
+            for elem in reversed(self.elements):
+                code += elem.generate_code(env)
+            code += f"""
+        # first malloc
+        # malloc
+        li $a0, 8
+        li $v0, 9
+        syscall
+        # list pointer to reg
+        move {TEMP_PTR}, $v0
+        move {SAVE_PTR}, $v0
+        
+        # fill list
+        li {TEMP_ITER}, {len(self.elements)-1}
+startFill{goto}:
+        ble {TEMP_ITER}, $zero, endFill{goto}
+        addi {TEMP_ITER}, {TEMP_ITER}, -1
+        # save elem
+        lw {TEMP}, ($sp)
+        addi $sp, $sp, 4
+        sw {TEMP}, ({TEMP_PTR})
+        # malloc
+        li $a0, 8
+        li $v0, 9
+        syscall
+        # link list
+        sw $v0, 4({TEMP_PTR})
+        move {TEMP_PTR}, $v0
+        b startFill{goto}
+endFill{goto}:  
+        # save elem
+        lw {TEMP}, ($sp)
+        addi $sp, $sp, 4
+        sw {TEMP}, ({TEMP_PTR})
+        # null pointer
+        sw $zero, 4({TEMP_PTR}) 
+        # list ptr to stack
+        addi $sp, $sp, -4
+        sw {SAVE_PTR}, ($sp)
+            """
+            return code
+
+        
 
 @dataclass
 class CallExpr(Expr):
@@ -457,6 +692,43 @@ class MemberExpr(Expr):
     obj: Expr
     property: Expr
     computed: bool
+    def generate_code(self, env: Env, is_left=False) -> str:
+        if self.computed:
+            goto = env.getGoto()
+            code = """
+        #list member expr
+            """
+            code += self.obj.generate_code(env)
+            code += self.property.generate_code(env)
+            code += f"""
+        lw {TEMP_ITER}, ($sp)
+        addi $sp, $sp, 4
+        lw {TEMP_PTR}, ($sp)
+        addi $sp, $sp, 4
+        # traverce
+startTrav{goto}:
+        ble {TEMP_ITER}, $zero, endTrav{goto}
+        addi {TEMP_ITER}, {TEMP_ITER}, -1
+        lw {TEMP_PTR}, 4({TEMP_PTR})
+        b startTrav{goto}
+endTrav{goto}:
+            """
+            if is_left:
+                code += f"""
+        # push pointer to stack
+        addi $sp, $sp, -4
+        sw {TEMP_PTR}, ($sp)
+                """
+            else:
+                code += f"""
+        # push value to stack
+        lw {TEMP}, ({TEMP_PTR})
+        addi $sp, $sp, -4
+        sw {TEMP}, ($sp)
+                """
+            return code
+        else:
+            raise Exception("Not implemented yet")
 
 @dataclass
 class Comparator(Expr):
@@ -496,9 +768,54 @@ class Comparator(Expr):
              code += f"""
         bne {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}, conTrue{goto}  # comparator !=
             """
+        elif self.operator == "in":
+            code += f"""
+        # comp in
+        beq {EXPR_EVAL_RIGHT}, $zero, conFalse{goto}
+        move {SAVE_PTR}, {EXPR_EVAL_RIGHT}
+travStart{goto}:
+        lw  {TEMP}, ({SAVE_PTR})
+        beq {EXPR_EVAL_LEFT}, {TEMP}, conTrue{goto}
+        lw {TEMP_PTR}, 4({SAVE_PTR})
+        beq {TEMP_PTR}, $zero, travEnd{goto}
+        move {SAVE_PTR}, {TEMP_PTR}
+        b travStart{goto}
+travEnd{goto}:
+            """
+        elif self.operator == "equals":
+            ptr_left = EXPR_EVAL_LEFT
+            ptr_right = EXPR_EVAL_RIGHT
+            temp_ptr_left = SAVE_PTR
+            temp_ptr_right = TEMP_PTR
+            value_left = TEMP
+            value_right = NOT_SAVE
+            code += f"""
+        # comp equals
+        beq {ptr_left}, {ptr_right}, conTrue{goto}
+        beq {ptr_left}, $zero, conFalse{goto}
+        beq {ptr_right}, $zero, conFalse{goto}
+travStart{goto}:
+        # compare elems
+        lw {value_left}, ({ptr_left})
+        lw {value_right}, ({ptr_right})
+        bne {value_left}, {value_right}, conFalse{goto}
+        lw {temp_ptr_left}, 4({ptr_left})
+        lw {temp_ptr_right}, 4({ptr_right})
+        beq {temp_ptr_left}, $zero, travCompare{goto}
+        beq {temp_ptr_right}, $zero, travCompare{goto}
+        b skipCompare{goto}
+travCompare{goto}:
+        beq {temp_ptr_left}, {temp_ptr_right}, conTrue{goto}
+        b conFalse{goto}
+skipCompare{goto}:
+        move {ptr_left}, {temp_ptr_left}
+        move {ptr_right}, {temp_ptr_right}
+        b travStart{goto}
+            """
         else:
             raise ASTError("invalid comparator")
         code += f"""
+conFalse{goto}:
         li {EXPR_EVAL_LEFT}, 0  # comparator descision
         b conExit{goto}
 conTrue{goto}:
@@ -527,3 +844,8 @@ class Output(Stmt):
         syscall
         """
         return code
+    
+@dataclass
+class Nothing(Expr):
+    def generate_code(self, env: Env) -> str:
+        return ""

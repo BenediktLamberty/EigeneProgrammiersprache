@@ -189,7 +189,7 @@ class Parser:
     
     def parse_object_expr(self) -> Expr:
         if self.tokens[0].type != TokenType.OPEN_BRACE:
-            return self.parse_additive_expr()
+            return self.parse_list_expr() # -------------------------!!!!!!!!!!!!!!!
         self.eat()
         properties = []
         while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
@@ -201,6 +201,7 @@ class Parser:
             # {arg}
             if self.tokens[0].type == TokenType.CLOSE_BRACE:
                 properties.append(Property(argument, NullLiteral()))
+                break
             # {key : val}
             self.expect(TokenType.COLON, "Missing >:< following argument in Obj")
             value = self.parse_expr()
@@ -209,6 +210,26 @@ class Parser:
                 self.expect(TokenType.COMMA, "Missing comma or closing bracket following a property")
         self.expect(TokenType.CLOSE_BRACE, "Obj missing closing brace")
         return ObjectLiteral(properties)
+    
+    def parse_list_expr(self) -> Expr:
+        if self.tokens[0].type != TokenType.OPEN_BRACKET:
+            return self.parse_push_expr()
+        self.eat()
+        elements = []
+        while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACKET]:
+            elements.append(self.parse_expr())
+            if self.tokens[0].type != TokenType.CLOSE_BRACKET:
+                self.expect(TokenType.COMMA, "Missing comma or closing bracket following an element")
+        self.expect(TokenType.CLOSE_BRACKET, "List missing closing bracket")
+        return LinkedList(elements)
+    
+    def parse_push_expr(self) -> Expr:
+        left = self.parse_additive_expr()
+        while self.tokens[0].value in ["add", "push"] and self.tokens[0].type == TokenType.BINARY_OPERATOR:
+            operator = self.eat().value
+            right = self.parse_expr()
+            left = BinaryExpr(left, right, operator)
+        return left
 
     def parse_additive_expr(self) -> Expr:
         left = self.parse_multiplicative_expr()
@@ -276,7 +297,7 @@ class Parser:
         return object
     
     def parse_unary_expr(self) -> Expr:
-        if self.tokens[0].type == TokenType.BINARY_OPERATOR and self.tokens[0].value in ["-", "!"]:
+        if self.tokens[0].type == TokenType.BINARY_OPERATOR and self.tokens[0].value in ["-", "!", "pop", "copy", "len"]:
             operator = self.eat().value
             arg = self.parse_expr()
             return UnaryExpr(arg, operator)

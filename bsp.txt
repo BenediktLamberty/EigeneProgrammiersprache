@@ -1,8 +1,7 @@
-const x = 8
-func f: y -> {
-    let z = 8
-    const u = 9
-    z = u
-    return y + z
+let x = [0, 1, 2, 3]
+output pop x
+let i = 0
+while i < len x {
+    output x[i]
+    i = i + 1
 }
-output f(x)
