@@ -72,11 +72,13 @@ Functions can take an infinite number of arguments and return one value. Functio
     * Use ´push´ to append a list: ´a push 4´ (returns the appended list)
     * pop coming soon
     * Use ´add´ to append a list by a second list: ´a add b´ (returns the appended list)
-    * equals coming soon
-    * in coming soon
 * Unary operators: 
     * ´len´ yields the length of the list: ´let lenOfA = len a´
     * ´copy´ returns a pointer to a copy of the list: ´let copyOfA = copy a´
+    * ´pop´ returns the last element of the list and removes it from the list: ´let x = pop a´
+* Comparators: 
+    * ´in´ checks if left argument is in right one: ´if x in [1, 2, 3] {...}´
+    * ´equals´ checks if both lists have the same elements: ´if a equals b {...}´
 
 If you find any bugs or want to share your opinion about this project, feel free to open a discussion or issue. 
 And sorry if my code is full of mixed German and English.

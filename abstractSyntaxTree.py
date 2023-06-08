@@ -488,6 +488,30 @@ travEnd{goto}:
         addi $sp, $sp, -4
         sw {TEMP} ($sp)
             """
+        elif self.operator == "pop":
+            goto = env.getGoto()
+            list_ptr = EXPR_EVAL_RIGHT
+            last_ptr = SAVE_PTR
+            temp_ptr = TEMP_PTR
+            pop_value = TEMP
+            code += f"""
+        lw {list_ptr}, ($sp)
+        addi $sp, $sp, 4
+        # travList
+travStart{goto}:
+        lw {temp_ptr}, 4({list_ptr})
+        beq {temp_ptr}, $zero, travEnd{goto}
+        move {last_ptr}, {list_ptr}
+        move {list_ptr}, {temp_ptr}
+        b travStart{goto}
+travEnd{goto}:
+        # poped value on stack
+        lw {pop_value}, ({list_ptr})
+        addi $sp, $sp, -4
+        sw {pop_value}, ($sp)
+        # unlink list
+        sw $zero, 4({last_ptr})
+            """
         else:
             raise ASTError("UnaryExpr has invalid operator")
         return code
@@ -744,9 +768,54 @@ class Comparator(Expr):
              code += f"""
         bne {EXPR_EVAL_LEFT}, {EXPR_EVAL_RIGHT}, conTrue{goto}  # comparator !=
             """
+        elif self.operator == "in":
+            code += f"""
+        # comp in
+        beq {EXPR_EVAL_RIGHT}, $zero, conFalse{goto}
+        move {SAVE_PTR}, {EXPR_EVAL_RIGHT}
+travStart{goto}:
+        lw  {TEMP}, ({SAVE_PTR})
+        beq {EXPR_EVAL_LEFT}, {TEMP}, conTrue{goto}
+        lw {TEMP_PTR}, 4({SAVE_PTR})
+        beq {TEMP_PTR}, $zero, travEnd{goto}
+        move {SAVE_PTR}, {TEMP_PTR}
+        b travStart{goto}
+travEnd{goto}:
+            """
+        elif self.operator == "equals":
+            ptr_left = EXPR_EVAL_LEFT
+            ptr_right = EXPR_EVAL_RIGHT
+            temp_ptr_left = SAVE_PTR
+            temp_ptr_right = TEMP_PTR
+            value_left = TEMP
+            value_right = NOT_SAVE
+            code += f"""
+        # comp equals
+        beq {ptr_left}, {ptr_right}, conTrue{goto}
+        beq {ptr_left}, $zero, conFalse{goto}
+        beq {ptr_right}, $zero, conFalse{goto}
+travStart{goto}:
+        # compare elems
+        lw {value_left}, ({ptr_left})
+        lw {value_right}, ({ptr_right})
+        bne {value_left}, {value_right}, conFalse{goto}
+        lw {temp_ptr_left}, 4({ptr_left})
+        lw {temp_ptr_right}, 4({ptr_right})
+        beq {temp_ptr_left}, $zero, travCompare{goto}
+        beq {temp_ptr_right}, $zero, travCompare{goto}
+        b skipCompare{goto}
+travCompare{goto}:
+        beq {temp_ptr_left}, {temp_ptr_right}, conTrue{goto}
+        b conFalse{goto}
+skipCompare{goto}:
+        move {ptr_left}, {temp_ptr_left}
+        move {ptr_right}, {temp_ptr_right}
+        b travStart{goto}
+            """
         else:
             raise ASTError("invalid comparator")
         code += f"""
+conFalse{goto}:
         li {EXPR_EVAL_LEFT}, 0  # comparator descision
         b conExit{goto}
 conTrue{goto}:

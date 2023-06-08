@@ -60,7 +60,8 @@ KEYWORDS = {
     "mod": TokenType.BINARY_OPERATOR,
     "add": TokenType.BINARY_OPERATOR,
     "push": TokenType.BINARY_OPERATOR,
-    "in": TokenType.BINARY_OPERATOR,
+    "in": TokenType.BINARY_COMPARATOR,
+    "equals": TokenType.BINARY_COMPARATOR,
 
     "pop": TokenType.BINARY_OPERATOR,
     "copy":TokenType.BINARY_OPERATOR,

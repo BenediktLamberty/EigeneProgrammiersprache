@@ -6,14 +6,6 @@
         
 # list decl and init
             
-        li $s0, 5  # Num 5 to stack
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
-        li $s0, 4  # Num 4 to stack
-        addi $sp, $sp, -4
-        sw $s0, ($sp)
-        
         li $s0, 3  # Num 3 to stack
         addi $sp, $sp, -4
         sw $s0, ($sp)
@@ -40,7 +32,7 @@
         move $s2, $v0
         
         # fill list
-        li $t1, 5
+        li $t1, 3
 startFill1:
         ble $t1, $zero, endFill1
         addi $t1, $t1, -1
@@ -71,9 +63,36 @@ endFill1:
         addi $sp, $sp, 4
         sw $s0, x
             
+        lw $s0, x  # Identifier x to stack
+            
+        addi $sp, $sp, -4
+        sw $s0, ($sp)
+        
+        lw $s1, ($sp)
+        addi $sp, $sp, 4
+        # travList
+travStart2:
+        lw $t2, 4($s1)
+        beq $t2, $zero, travEnd2
+        move $s2, $s1
+        move $s1, $t2
+        b travStart2
+travEnd2:
+        # poped value on stack
+        lw $t0, ($s1)
+        addi $sp, $sp, -4
+        sw $t0, ($sp)
+        # unlink list
+        sw $zero, 4($s2)
+            
+        lw $a0, ($sp)  # outputting an int !!!
+        addi $sp, $sp, 4
+        li $v0, 1
+        syscall
+        
         # Var i decl in .data with value 0
             
-whileCondition2:
+whileCondition3:
             
         lw $s0, i  # Identifier i to stack
             
@@ -88,14 +107,14 @@ whileCondition2:
         move $t0, $zero
         lw $s2, ($sp)
         addi $sp, $sp, 4
-        beq $s2, $zero, travEnd3
-travStart3:
+        beq $s2, $zero, travEnd4
+travStart4:
         addi $t0, $t0, 1
         lw $t2, 4($s2)
-        beq $t2, $zero, travEnd3
+        beq $t2, $zero, travEnd4
         move $s2, $t2
-        b travStart3
-travEnd3:
+        b travStart4
+travEnd4:
         addi $sp, $sp, -4
         sw $t0 ($sp)
             
@@ -103,18 +122,19 @@ travEnd3:
         addi $sp, $sp, 4
         lw $s0, ($sp)
             
-        blt $s0, $s1, conTrue4  # comparator <
+        blt $s0, $s1, conTrue5  # comparator <
             
+conFalse5:
         li $s0, 0  # comparator descision
-        b conExit4
-conTrue4:
+        b conExit5
+conTrue5:
         li $s0, 1
-conExit4:
+conExit5:
         sw $s0, ($sp)
             
         lw $s0, ($sp)  # while loop condition check
         addi $sp, $sp, 4
-        beq $s0, $zero, exitWhile2
+        beq $s0, $zero, exitWhile3
             
         # Body of While Loop
         
@@ -135,12 +155,12 @@ conExit4:
         lw $t2, ($sp)
         addi $sp, $sp, 4
         # traverce
-startTrav5:
-        ble $t1, $zero, endTrav5
+startTrav6:
+        ble $t1, $zero, endTrav6
         addi $t1, $t1, -1
         lw $t2, 4($t2)
-        b startTrav5
-endTrav5:
+        b startTrav6
+endTrav6:
             
         # push value to stack
         lw $t0, ($t2)
@@ -174,8 +194,8 @@ endTrav5:
                 
         addi $sp, $sp, 4  # raising sp after expression
                 
-        b whileCondition2  # looping while
-exitWhile2:
+        b whileCondition3  # looping while
+exitWhile3:
             
 # Global Variables
         .data
