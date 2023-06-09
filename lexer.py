@@ -45,6 +45,9 @@ class TokenType(Enum):
     DO = auto()
     THEN = auto()
     FOR = auto()
+    EACH = auto()
+    FROM = auto()
+    INDEX = auto()
 
     RETURN = auto()
     BREAK = auto()
@@ -80,6 +83,10 @@ KEYWORDS = {
     "do": TokenType.DO,
     "then": TokenType.THEN,
     "for": TokenType.FOR,
+    "each": TokenType.EACH,
+    "to": TokenType.TO,
+    "from": TokenType.FROM,
+    "index": TokenType.INDEX,
 
     "return": TokenType.RETURN,
     "break": TokenType.BREAK,

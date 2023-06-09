@@ -174,6 +174,23 @@ class Return(Stmt):
         addi $sp, $sp, 4
         b {env.in_func}Return
         """
+    
+@dataclass
+class Do(Stmt):
+    body: List[Stmt]
+    def generate_code(self, env: Env) -> str:
+        env.increase_depth()
+        code = """
+# block of code
+        """
+        for stmt in self.body:
+            code += stmt.generate_code(env)
+            if isinstance(stmt, Expr):
+                code += """
+        addi $sp, $sp, 4  # raising sp after expression
+                """
+        env.decrease_depth()
+        return code
 
 @dataclass
 class If(Stmt):
@@ -264,6 +281,8 @@ exitWhile{goto}:
             """
             env.decrease_depth()
         return code
+    
+
 
 @dataclass
 class Break(Stmt):
@@ -825,12 +844,9 @@ conExit{goto}:
             """
         return code
 
-@dataclass
-class For(Stmt):
-    start: NumericLiteral
-    end: NumericLiteral
-    step: NumericLiteral
-    body: List[Stmt]
+class ForEach(Stmt):
+    pass
+    
 
 @dataclass
 class Output(Stmt):
@@ -849,3 +865,58 @@ class Output(Stmt):
 class Nothing(Expr):
     def generate_code(self, env: Env) -> str:
         return ""
+    
+@dataclass
+class ForEach(Stmt):
+    list_ptr: Expr
+    ptr_var: Identifier
+    idx_var: Identifier
+    value_var: Identifier
+    body: List[Stmt]
+    def generate_code(self, env: Env) -> str:
+        env.increase_depth()
+        goto = env.getGoto()
+        code = f"""
+# for each loop
+        # set ptr var:
+{AssignmentExpr(assigne=self.ptr_var, value=self.list_ptr).generate_code(env)}
+        addi $sp, $sp, 4
+        # check for Null ptr
+{self.ptr_var.generate_code(env)}
+        lw {TEMP_PTR}, ($sp)
+        addi $sp, $sp, 4
+        beq {TEMP_PTR}, $zero, endForEach{goto}
+forLoop{goto}:
+{self.ptr_var.generate_code(env)}
+        lw {TEMP}, ($sp)
+        lw {TEMP}, ({TEMP})
+        sw {TEMP}, ($sp)
+{AssignmentExpr(assigne=self.value_var, value=Nothing()).generate_code(env)}
+        addi $sp, $sp, 4    
+        """
+        for stmt in self.body:
+            code += stmt.generate_code(env)
+            if isinstance(stmt, Expr):
+                code += """
+        addi $sp, $sp, 4  # raising sp after expression
+                """
+        code += f"""
+{self.ptr_var.generate_code(env)}
+        lw {SAVE_PTR}, ($sp)
+        addi $sp, $sp, 4
+        lw {TEMP_PTR}, 4({SAVE_PTR})
+        beq {TEMP_PTR}, $zero, endForEach{goto}
+        addi $sp, $sp, -4
+        sw {TEMP_PTR}, ($sp)
+{AssignmentExpr(assigne=self.ptr_var, value=Nothing()).generate_code(env)}
+        addi $sp, $sp, 4
+{AssignmentExpr(assigne=self.idx_var, value=BinaryExpr(self.idx_var, NumericLiteral(1), "+")).generate_code(env)}
+        addi $sp, $sp, 4
+        b forLoop{goto}
+endForEach{goto}:
+        """
+        env.decrease_depth()
+        return code
+
+
+

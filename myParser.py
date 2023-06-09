@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import List, Tuple
+import random as rnd
+import string
 
 
 class Parser:
@@ -59,6 +61,8 @@ class Parser:
             return self.parse_ifElifElse_block()
         elif self.tokens[0].type in [TokenType.WHILE, TokenType.DO]:
             return self.parse_while_loop()
+        elif self.tokens[0].type == TokenType.FOR:
+            return self.parse_for_loop()
         elif self.tokens[0].type == TokenType.RETURN:
             return self.parse_return()
         elif self.tokens[0].type == TokenType.BREAK:
@@ -127,6 +131,106 @@ class Parser:
             body.append(self.parse_stmt())
         self.expect(TokenType.CLOSE_BRACE, "Expected close brace at end of while loop")
         return While(condition, has_do, body)
+    
+    def parse_for_loop(self) -> Stmt:
+        self.expect(TokenType.FOR, "For missing from For loop")
+        # for each
+        if self.tokens[0].type == TokenType.EACH:
+            iterateable: Expr
+            ptr_var: Identifier = Identifier(symbol="".join(rnd.choice(string.ascii_letters) for _ in range(10)))
+            idx_var: Identifier = Identifier(symbol="".join(rnd.choice(string.ascii_letters) for _ in range(10)))
+            value_var: Identifier
+            body: List[Stmt] = []
+            self.eat()
+            value_var = Identifier(self.expect(TokenType.IDENTIFYER, "For Each needs ident").value)
+            while self.tokens[0].type != TokenType.OPEN_BRACE:
+                if self.tokens[0].type == TokenType.INDEX:
+                    self.eat()
+                    idx_var = Identifier(self.expect(TokenType.IDENTIFYER, "For Each needs ident").value)
+                elif self.tokens[0].value == "in":
+                    self.eat()
+                    iterateable = self.parse_expr()
+            self.expect(TokenType.OPEN_BRACE, "Expected open Brace in for")
+            while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
+                body.append(self.parse_stmt())
+            self.expect(TokenType.CLOSE_BRACE, "Expected close brace at end of while loop")
+            return Do(
+                body=[
+                    VarDecl(const=False, identifier=ptr_var.symbol, value=NumericLiteral(0)),
+                    VarDecl(const=False, identifier=idx_var.symbol, value=NumericLiteral(0)),
+                    VarDecl(const=False, identifier=value_var.symbol, value=NumericLiteral(0)),
+                    ForEach(iterateable, ptr_var, idx_var, value_var, body)
+                ]
+            )
+        # for
+        else:
+            # without variable
+            ident: str = "".join(rnd.choice(string.ascii_letters) for _ in range(10))
+            start_value: Expr = NumericLiteral(value=0)
+            condition: Expr
+            for_body: List[Stmt] = []
+            iterator: Expr = AssignmentExpr(
+                assigne=Identifier(symbol=ident), 
+                value=BinaryExpr(left=Identifier(symbol=ident), right=NumericLiteral(value=1), operator="+")
+                )
+            end_reached = False
+            # ---
+            # first expression
+            first_expr = self.parse_expr()
+            if isinstance(first_expr, Identifier):
+                ident = first_expr.symbol
+                iterator = AssignmentExpr(
+                    assigne=Identifier(symbol=ident), 
+                    value=BinaryExpr(left=Identifier(symbol=ident), right=NumericLiteral(value=1), operator="+")
+                )
+            elif isinstance(first_expr, AssignmentExpr):
+                if not isinstance(first_expr.assigne, Identifier):
+                    raise TokenError("Iterator in for must be Identifier")
+                ident = first_expr.assigne.symbol
+                iterator = AssignmentExpr(
+                    assigne=Identifier(symbol=ident), 
+                    value=BinaryExpr(left=Identifier(symbol=ident), right=NumericLiteral(value=1), operator="+")
+                )
+                start_value = first_expr.value                
+            else:
+                condition = Comparator(left=Identifier(symbol=ident), right=first_expr, operator="<")
+                end_reached = True
+            while not end_reached and self.tokens[0].type != TokenType.OPEN_BRACE:
+                if self.tokens[0].type == TokenType.FROM:
+                    self.eat()
+                    start_value = self.parse_expr()
+                elif self.tokens[0].type == TokenType.TO:
+                    self.eat()
+                    condition = Comparator(left=Identifier(symbol=ident), right=self.parse_expr(), operator="<")
+                elif self.tokens[0].type == TokenType.WHILE:
+                    self.eat()
+                    condition = self.parse_expr()
+                elif self.tokens[0].type == TokenType.THEN:
+                    self.eat()
+                    iterator = self.parse_expr()
+                else:
+                    raise TokenError(f"Unexpected Token >{self.eat()}< in for loop")
+            self.expect(TokenType.OPEN_BRACE, "Expected open Brace in for")
+            while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
+                for_body.append(self.parse_stmt())
+            self.expect(TokenType.CLOSE_BRACE, "Expected close brace at end of while loop")
+            # ---
+            for_body.append(iterator)
+            return Do(
+                body=[
+                    VarDecl(
+                        const=False,
+                        identifier=ident,
+                        value=start_value
+                    ),
+                    While(
+                        condition=condition,
+                        has_do=False,
+                        body=for_body
+                    )
+                ]
+            )
+
   
     def parse_func_declaration(self) -> Stmt:
         self.eat()
