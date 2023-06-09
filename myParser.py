@@ -121,7 +121,7 @@ class Parser:
     def parse_while_loop(self) -> Stmt:
         has_do = False
         if self.tokens[0].type == TokenType.DO:
-            self.expect_multiple([TokenType.DO, TokenType.COMMA, TokenType.THEN], "Do then expected in while loop")
+            self.expect_multiple([TokenType.DO, TokenType.THEN], "Do then expected in while loop")
             has_do = True
         self.expect(TokenType.WHILE, "While loop missing while")
         condition = self.parse_expr()

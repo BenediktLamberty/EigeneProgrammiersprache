@@ -46,9 +46,17 @@ Variables have a scope. However, every variable outside a function is global.
 
 * if x < 10 {...}
 * while x < 10 {...}
-* do, then while x < 10 {...}
+* do then while x < 10 {...}
 * no break yet
-* no for-loop yet
+* To create for-loops use ´for´ followed by your iteration counter identifier. Use an assignment expression or the ´from´ keyword to set a starting value (inclusive). Use ´to´ to mark an exclusive upper bound or ´while´ followed by an expression as a condition. The default step is 1, which can be modified by the ´then´ keyword followed by an assignment expression, which will be executed after each iteration. Examples:
+    * for 10 {...} # executes 10 times
+    * for i to 10 {...} # executes 10 times with i running from 0 to 9 
+    * for i from 5 to 10 # i runs from 5 to 9
+    * for i = 5 while i <= 25 # i runs from 5 to 25
+    * for i = 1 while i <= 64 then i=i*2 # i runs from 1 to 64 doubling in each iteration
+* To iterate over a list use ´for each´ followed by your element identifier. Use ´in´ followed by a list to choose your list. You can also use ´index´ followed by an identifier. This index will count the iterations of the loop. Examples:
+    * for each a in A {...}
+    * for each a in [1, 3, 5] index i {...} # a will have the values 1, 3 and 5; i 0, 1, 2
 
 #### Functions
 
@@ -83,8 +91,46 @@ Functions can take an infinite number of arguments and return one value. Functio
 If you find any bugs or want to share your opinion about this project, feel free to open a discussion or issue. 
 And sorry if my code is full of mixed German and English.
 
+### Example Program --- Bubble Sort
+
+´
+func main: () -> {
+    let A = [2, 4, 1, 6, 9, 5, 3]
+    A = bubbleSort(A)
+    print(A)
+}
+
+func print: A -> {
+    for each a in A {
+        output a
+    }
+}
+
+func bubbleSort: A -> {
+    let n = len A 
+    let swapped = True
+    while ! swapped {
+        swapped = False
+        for i from 1 to n {
+            if A[i-1] > A[i] {
+                A = swap(A, i, i-1)
+                swapped = True
+            }
+        }
+    }
+    return A
+}
+
+func swap: (A, i, j) -> {
+    let x = A[i]
+    A[i] = A[j]
+    A[j] = x
+    return A
+}
 
 
+main()
+´
 
 
 
