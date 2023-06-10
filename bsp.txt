@@ -1,5 +1,7 @@
-let A = [1, 2, 3]
-for each a in A index i {
-    output a 
-    output i
+let f = func: x -> {
+    let g = func: y -> {return y * 2}
+    return g(x)
 }
+
+output f(9)
+

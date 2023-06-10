@@ -4,12 +4,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import List, Tuple
+import random as rnd
+import string
 
 EXPR_EVAL_LEFT = "$s0"
 EXPR_EVAL_RIGHT = "$s1"
 TEMP_PTR = "$t2"
 SAVE_PTR = "$s2"
 NOT_SAVE = "$s3"
+FUNC_PTR = "$s4"
 
 TEMP = "$t0"
 TEMP_ITER = "$t1"
@@ -56,7 +59,7 @@ class VarDecl(Stmt):
     identifier: str
     value: Expr
     def generate_code(self, env: Env) -> str:
-        if env.in_func != None:
+        if len(env.in_func) != 0:
         #in func
             env.deklLocalVar(self.identifier, self.const)
             code = """
@@ -94,11 +97,12 @@ class VarDecl(Stmt):
 
 
 @dataclass
-class FunctionDeclaration(Stmt):
+class FunctionDeclaration(Expr):
     name: str
     parameters: List[str]
     body: List[Stmt]
     def generate_code(self, env: Env) -> str:
+        self.name = "".join(rnd.choice(string.ascii_letters) for _ in range(10))
         env.startFunc(self.name, self.parameters)
         # body
         body_code = f"""
@@ -115,8 +119,8 @@ class FunctionDeclaration(Stmt):
         b {self.name}End
 {self.name}:
 # Function Preamble of {self.name}:
-        # data allocation {env.max_offset} vars:
-        addi $sp, $sp, -{env.max_offset * 4}
+        # data allocation {env.max_offset[-1]} vars:
+        addi $sp, $sp, -{env.max_offset[-1] * 4}
         # save $ra
         addi $sp, $sp, -4
         sw $ra, ($sp)
@@ -146,9 +150,11 @@ class FunctionDeclaration(Stmt):
         # $ra restore
         lw $ra, 32($fp)
         # $sp return
-        addi $sp, $sp, {8*4 + 4 + env.max_offset*4 + len(self.parameters)*4}
+        addi $sp, $sp, {8*4 + 4 + env.max_offset[-1]*4 + len(self.parameters)*4}
         # restore $fp
         lw $fp, ($sp)
+        # accord for func ptr
+        addi $sp, $sp, 4
         # return $v0
         sw $v0, ($sp)
         # final return
@@ -157,8 +163,13 @@ class FunctionDeclaration(Stmt):
         """
         # Args ersetzen
         for i in range(len(self.parameters)):
-            code = code.replace(f"?{self.parameters[i]}", f"{8*4 + 4 + env.max_offset*4 + i*4}($fp)")
-
+            code = code.replace(f"?{self.parameters[i]}", f"{8*4 + 4 + env.max_offset[-1]*4 + i*4}($fp)")
+        code += f"""
+        # push func pointer
+        la {TEMP}, {self.name}
+        addi $sp, $sp, -4
+        sw {TEMP}, ($sp)
+        """
         env.endFunc()
         return code
 
@@ -172,7 +183,7 @@ class Return(Stmt):
         # retrun call
         lw $v0, ($sp)
         addi $sp, $sp, 4
-        b {env.in_func}Return
+        b {env.in_func[-1]}Return
         """
     
 @dataclass
@@ -685,21 +696,22 @@ class CallExpr(Expr):
     args: List[Expr]
     caller: Expr
     def generate_code(self, env: Env) -> str:
-        if isinstance(self.caller, Identifier):
-            code = f"""
-        # Call of func {self.caller.symbol}
+        code = self.caller.generate_code(env)
+        code += f"""
+        # Call of func
         # Push $ffp
         addi $sp, $sp, -4
         sw $fp, ($sp)
-            """
-            for i in range(len(self.args)):
-                code += f"""
+        """
+        for i in range(len(self.args)):
+            code += f"""
         # push arg {len(self.args) - i}
-                """
-                code += self.args[len(self.args) - 1 - i].generate_code(env)
+            """
+            code += self.args[len(self.args) - 1 - i].generate_code(env)
         code += f"""
         # final call
-        jal {self.caller.symbol}
+        lw {FUNC_PTR}, {len(self.args)*4 + 4}($sp)
+        jalr {FUNC_PTR}
         """
         return code
                 
