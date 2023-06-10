@@ -55,8 +55,8 @@ class Parser:
         elif ([token.type for token in self.tokens[0:3]] 
             == [TokenType.IDENTIFYER, TokenType.COLON, TokenType.EQUALS]):
             return self.parse_var_decl(has_let=False)
-        elif self.tokens[0].type == TokenType.FUNC:
-            return self.parse_func_declaration()
+#        elif self.tokens[0].type == TokenType.FUNC:
+#           return self.parse_func_declaration()
         elif self.tokens[0].type == TokenType.IF:
             return self.parse_ifElifElse_block()
         elif self.tokens[0].type in [TokenType.WHILE, TokenType.DO]:
@@ -232,33 +232,53 @@ class Parser:
             )
 
   
-    def parse_func_declaration(self) -> Stmt:
+    # def parse_func_declaration(self) -> Stmt:
+    #     self.eat()
+    #     name = self.expect(TokenType.IDENTIFYER, "Expected Function name following keywords").value
+    #     with_colon = self.tokens[0].type == TokenType.COLON
+    #     if with_colon:
+    #         self.eat()
+    #     args = self.parse_args()
+    #     params = []
+    #     for arg in args:
+    #         if not isinstance(arg, Identifier):
+    #             raise TokenError("Iside func decl expected to be a str")
+    #         params.append(arg.symbol)
+    #     if with_colon:
+    #         self.expect(TokenType.TO, "Mapping arrow expexted")
+    #     else:
+    #         self.expect_multiple([TokenType.COLON, TokenType.EQUALS], "Equation defenition expected using >:=<")
+    #     self.expect(TokenType.OPEN_BRACE, "func body expected")
+    #     body = []
+    #     while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
+    #         body.append(self.parse_stmt())
+    #     self.expect(TokenType.CLOSE_BRACE, "Closing brace expected at end of func body")
+    #     func = FunctionDeclaration(name, params, body)
+    #     return func
+
+
+    def parse_expr(self) -> Expr:
+        return self.parse_func_expr() 
+    
+    def parse_func_expr(self) -> Expr:
+        if self.tokens[0].type != TokenType.FUNC:
+            return self.parse_or_expr()
         self.eat()
-        name = self.expect(TokenType.IDENTIFYER, "Expected Function name following keywords").value
-        with_colon = self.tokens[0].type == TokenType.COLON
-        if with_colon:
-            self.eat()
+        self.expect(TokenType.COLON, "Expected colon in expr func decl")
         args = self.parse_args()
         params = []
         for arg in args:
             if not isinstance(arg, Identifier):
                 raise TokenError("Iside func decl expected to be a str")
             params.append(arg.symbol)
-        if with_colon:
-            self.expect(TokenType.TO, "Mapping arrow expexted")
-        else:
-            self.expect_multiple([TokenType.COLON, TokenType.EQUALS], "Equation defenition expected using >:=<")
+        self.expect(TokenType.TO, "Mapping arrow expexted")
         self.expect(TokenType.OPEN_BRACE, "func body expected")
         body = []
         while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
             body.append(self.parse_stmt())
         self.expect(TokenType.CLOSE_BRACE, "Closing brace expected at end of func body")
-        func = FunctionDeclaration(name, params, body)
-        return func
+        return FunctionDeclaration(name=None, parameters=params, body=body)
 
-    def parse_expr(self) -> Expr:
-        return self.parse_or_expr()
-    
     def parse_or_expr(self) -> Expr:
         left = self.parse_and_expr()
         while self.tokens[0].value in ["||"] and self.tokens[0].type == TokenType.BINARY_LOGIC_OP:
