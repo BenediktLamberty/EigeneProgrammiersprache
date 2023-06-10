@@ -59,7 +59,7 @@ class VarDecl(Stmt):
     identifier: str
     value: Expr
     def generate_code(self, env: Env) -> str:
-        if env.in_func != None:
+        if len(env.in_func) != 0:
         #in func
             env.deklLocalVar(self.identifier, self.const)
             code = """
@@ -119,8 +119,8 @@ class FunctionDeclaration(Expr):
         b {self.name}End
 {self.name}:
 # Function Preamble of {self.name}:
-        # data allocation {env.max_offset} vars:
-        addi $sp, $sp, -{env.max_offset * 4}
+        # data allocation {env.max_offset[-1]} vars:
+        addi $sp, $sp, -{env.max_offset[-1] * 4}
         # save $ra
         addi $sp, $sp, -4
         sw $ra, ($sp)
@@ -150,7 +150,7 @@ class FunctionDeclaration(Expr):
         # $ra restore
         lw $ra, 32($fp)
         # $sp return
-        addi $sp, $sp, {8*4 + 4 + env.max_offset*4 + len(self.parameters)*4}
+        addi $sp, $sp, {8*4 + 4 + env.max_offset[-1]*4 + len(self.parameters)*4}
         # restore $fp
         lw $fp, ($sp)
         # accord for func ptr
@@ -163,7 +163,7 @@ class FunctionDeclaration(Expr):
         """
         # Args ersetzen
         for i in range(len(self.parameters)):
-            code = code.replace(f"?{self.parameters[i]}", f"{8*4 + 4 + env.max_offset*4 + i*4}($fp)")
+            code = code.replace(f"?{self.parameters[i]}", f"{8*4 + 4 + env.max_offset[-1]*4 + i*4}($fp)")
         code += f"""
         # push func pointer
         la {TEMP}, {self.name}
@@ -183,7 +183,7 @@ class Return(Stmt):
         # retrun call
         lw $v0, ($sp)
         addi $sp, $sp, 4
-        b {env.in_func}Return
+        b {env.in_func[-1]}Return
         """
     
 @dataclass

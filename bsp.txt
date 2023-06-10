@@ -1,4 +1,7 @@
-let g = func: (x) -> {return x * 4}
-let f = func: () -> {return g}
-output f()(4)
+let f = func: x -> {
+    let g = func: y -> {return y * 2}
+    return g(x)
+}
+
+output f(9)
 

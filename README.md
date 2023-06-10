@@ -60,7 +60,7 @@ Variables have a scope. However, every variable outside a function is global.
 
 #### Functions
 
-Functions can take an infinite number of arguments and return one value. Functions can pass other functions as arguments and return values. However, functiones cannot be declared inside functions. 
+Functions can take an infinite number of arguments and return one value. Functions can pass other functions as arguments and return values and can be declared locally in other functions. 
 
 * Declaration:
     * let a = func: () -> {
