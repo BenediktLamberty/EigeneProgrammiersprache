@@ -1,7 +1,1 @@
-let f = func: x -> {
-    let g = func: y -> {return y * 2}
-    return g(x)
-}
-
-output f(9)
 
