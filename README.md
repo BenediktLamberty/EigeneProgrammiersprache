@@ -44,7 +44,7 @@ Variables have a scope. However, every variable outside a function is global.
 
 #### Control Flow
 
-* if x < 10 {...}
+* ´if x < 10 {...}´, elif and else
 * while x < 10 {...}
 * do then while x < 10 {...}
 * no break yet

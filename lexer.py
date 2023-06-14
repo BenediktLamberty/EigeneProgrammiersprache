@@ -51,6 +51,7 @@ class TokenType(Enum):
 
     RETURN = auto()
     BREAK = auto()
+    RECUR = auto()
 
     OUT = auto()
     # end of file
@@ -89,6 +90,7 @@ KEYWORDS = {
     "index": TokenType.INDEX,
 
     "return": TokenType.RETURN,
+    "recur": TokenType.RECUR,
     "break": TokenType.BREAK,
 
     "output": TokenType.OUT

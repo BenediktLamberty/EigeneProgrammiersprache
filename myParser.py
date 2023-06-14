@@ -364,15 +364,25 @@ class Parser:
         return left
     
     def parse_multiplicative_expr(self) -> Expr:
-        left = self.parse_call_member_expr() # !!!!!
+        left = self.parse_recur_expr() # !!!!!
         while self.tokens[0].value in ["*", "/", "mod"] and self.tokens[0].type == TokenType.BINARY_OPERATOR:
             operator = self.eat().value
-            right = self.parse_call_member_expr() # !!!!
+            right = self.parse_recur_expr() # !!!!
             left = BinaryExpr(left, right, operator)
         return left
     
+    def parse_recur_expr(self) -> Expr:
+        if self.tokens[0].type != TokenType.RECUR:
+            return self.parse_call_member_expr()
+        self.eat()
+        return CallExpr(args=self.parse_args(), caller=Recur())
+    
     def parse_call_member_expr(self) -> Expr:
-        member = self.parse_member_expr()
+        member: Expr
+        if self.tokens[0].type == TokenType.FUNC:
+            member = self.parse_func_expr()
+        else:
+            member = self.parse_member_expr()
         if self.tokens[0].type == TokenType.OPEN_PAREN:
             return self.parse_call_expr(member)
         return member

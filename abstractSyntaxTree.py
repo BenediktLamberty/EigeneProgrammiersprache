@@ -714,6 +714,17 @@ class CallExpr(Expr):
         jalr {FUNC_PTR}
         """
         return code
+    
+
+@dataclass
+class Recur(Expr):
+    def generate_code(self, env: Env) -> str:
+        return f"""
+        # recur
+        la {FUNC_PTR}, {env.in_func[-1]}
+        addi $sp, $sp, -4
+        sw {FUNC_PTR}, ($sp)
+        """
                 
 
 
