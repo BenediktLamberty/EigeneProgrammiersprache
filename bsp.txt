@@ -1,6 +1,9 @@
-let A = [func: n -> {
-    if n <= 1 {return 1}
-    else {return n * recur(n-1)}
-}]
-
-output A[0](5)
+let Cat = class: extends Animal {
+    priv futter = 8
+    construct: (x) -> {
+        self.futter = x
+    }
+    publ miau = func: () -> {}
+    priv hihihiha
+    publ const uu = 9
+}

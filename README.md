@@ -70,6 +70,7 @@ Functions can take an infinite number of arguments and return one value. Functio
     * let b = func: x -> {...}
     * let c = func: (x, y, z) -> {...}
 * Call: ´aaa()´, ´ccc(x, y, z)´
+* In named functions you can use ´name()´ to call the function recursively. Otherwise use ´recur()´.
 
 #### Lists
 

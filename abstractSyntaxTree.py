@@ -623,13 +623,29 @@ class AssignmentExpr(Expr):
         return code
 
 @dataclass
-class Property(Expr):
+class Property(Stmt):
     arg: str
     value: Expr
+    const: bool
+    private: bool
+
+@dataclass
+class Constructor(Stmt):
+    func: FunctionDeclaration
+
+@dataclass
+class ClassExpr(Expr):
+    extends: Expr
+    properties: List[Property]
+    constructors: List[Constructor]
 
 @dataclass
 class ObjectLiteral(Expr):
     properties: List[Property]
+
+@dataclass
+class Self(Expr):
+    pass
 
 @dataclass
 class LinkedList(Expr):

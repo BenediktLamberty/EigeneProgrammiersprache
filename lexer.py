@@ -53,6 +53,15 @@ class TokenType(Enum):
     BREAK = auto()
     RECUR = auto()
 
+    OBJ = auto()
+    CLASS = auto()
+    EXTENDS = auto()
+    PUBL = auto()
+    PRIV = auto()
+    CONSTRUCT = auto()
+
+    SELF = auto()
+
     OUT = auto()
     # end of file
     EOF = auto()
@@ -92,6 +101,15 @@ KEYWORDS = {
     "return": TokenType.RETURN,
     "recur": TokenType.RECUR,
     "break": TokenType.BREAK,
+
+    "obj": TokenType.OBJ,
+    "class": TokenType.CLASS,
+    "extends": TokenType.EXTENDS,
+    "publ": TokenType.PUBL,
+    "priv": TokenType.PRIV,
+    "construct": TokenType.CONSTRUCT,
+
+    "self": TokenType.SELF,
 
     "output": TokenType.OUT
 }

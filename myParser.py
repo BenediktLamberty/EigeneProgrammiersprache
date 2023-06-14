@@ -312,28 +312,63 @@ class Parser:
         return left
     
     def parse_object_expr(self) -> Expr:
-        if self.tokens[0].type != TokenType.OPEN_BRACE:
-            return self.parse_list_expr() # -------------------------!!!!!!!!!!!!!!!
+        if self.tokens[0].type != TokenType.OBJ:
+            return self.parse_class_expr()
         self.eat()
-        properties = []
+        self.expect(TokenType.COLON, "Missing Colon in obj literal")
+        self.expect(TokenType.OPEN_BRACE, "Missing open brace in obj literal")
+        properties: List[Property] = []
         while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
-            argument = self.expect(TokenType.IDENTIFYER, "Obj literal key expected").value
-            # {arg, }
-            if self.tokens[0].type == TokenType.COMMA:
-                self.eat()
-                properties.append(Property(argument, NullLiteral()))
-            # {arg}
-            if self.tokens[0].type == TokenType.CLOSE_BRACE:
-                properties.append(Property(argument, NullLiteral()))
-                break
-            # {key : val}
-            self.expect(TokenType.COLON, "Missing >:< following argument in Obj")
+            properties.append(self.parse_property())
+        self.eat()
+        return ObjectLiteral(properties=properties)
+    
+    def parse_class_expr(self) -> Expr:
+        if self.tokens[0].type != TokenType.CLASS:
+            return self.parse_list_expr()
+        self.eat()
+        self.expect(TokenType.COLON, "Missing Colon in class")
+        extends = None
+        if self.tokens[0].type == TokenType.EXTENDS:
+            self.eat()
+            extends = self.parse_expr()
+        self.expect(TokenType.OPEN_BRACE, "Missing open brace in class")
+        properties: List[Property] = []
+        constructors = []
+        while self.tokens[0].type not in [TokenType.EOF, TokenType.CLOSE_BRACE]:
+            if self.tokens[0].type == TokenType.CONSTRUCT:
+                self.tokens[0] = Token(type=TokenType.FUNC, value=None)
+                constructors.append(Constructor(func=self.parse_expr()))
+            else:
+                properties.append(self.parse_property())
+        self.eat()
+        if len(constructors) == 0:
+            constructors.append(Constructor(func=FunctionDeclaration(name=None, parameters=[], body=[])))
+        return ClassExpr(extends=extends, properties=properties, constructors=constructors)
+
+    def parse_property(self) -> Property:
+        priv: bool
+        const = False
+        if self.tokens[0].type == TokenType.PUBL:
+            self.eat()
+            priv = False
+        elif self.tokens[0].type == TokenType.PRIV:
+            self.eat()
+            priv = True
+        else:
+            raise TokenError("priv or publ expected in property decl")
+        if self.tokens[0].type == TokenType.CONST:
+            self.eat()
+            const = True
+        arg_name = self.expect(TokenType.IDENTIFYER, "Idend expected")
+        value = NullLiteral()
+        if self.tokens[0].type == TokenType.EQUALS:
+            self.eat()
             value = self.parse_expr()
-            properties.append(Property(argument, value))
-            if self.tokens[0].type != TokenType.CLOSE_BRACE:
-                self.expect(TokenType.COMMA, "Missing comma or closing bracket following a property")
-        self.expect(TokenType.CLOSE_BRACE, "Obj missing closing brace")
-        return ObjectLiteral(properties)
+        elif const:
+            raise TokenError("Const must be init")
+        return Property(arg=arg_name, value=value, const=const, private=priv)
+        
     
     def parse_list_expr(self) -> Expr:
         if self.tokens[0].type != TokenType.OPEN_BRACKET:
@@ -413,14 +448,14 @@ class Parser:
         return args 
 
     def parse_member_expr(self) -> Expr:
-        object = self.parse_unary_expr()
+        object = self.parse_self_expr()
         while self.tokens[0].type in [TokenType.DOT, TokenType.OPEN_BRACKET]:
             operator = self.eat()
             property: Expr
             computed: bool
             if operator.type == TokenType.DOT:
                 computed = False
-                property = self.parse_unary_expr()
+                property = self.parse_self_expr()
                 if not isinstance(property, Identifier):
                     raise TokenError("Cannot use dot operator without right side being identifier")
             else:
@@ -429,6 +464,12 @@ class Parser:
                 self.expect(TokenType.CLOSE_BRACKET, "Missing computed value")
             object = MemberExpr(object, property, computed)
         return object
+    
+    def parse_self_expr(self) -> Expr:
+        if self.tokens[0].type != TokenType.SELF:
+            return self.parse_unary_expr()
+        self.eat()
+        return Self()
     
     def parse_unary_expr(self) -> Expr:
         if self.tokens[0].type == TokenType.BINARY_OPERATOR and self.tokens[0].value in ["-", "!", "pop", "copy", "len"]:
