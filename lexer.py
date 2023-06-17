@@ -132,8 +132,8 @@ def tokenize(sourceCode: str) -> List[Token]:
     # Alle Tokens fürs ganze File erstellen
 
     while len(src) > 0:
-        if src[0] == "#" and src[1] == "[":
-            while (src[0] != "]" or src[1] != "#") and len(src) > 0:
+        if src[0] == "#" and src[1] == "{":
+            while (src[0] != "}" or src[1] != "#") and len(src) > 0:
                 src.pop(0)
             src.pop(0)
             src.pop(0)
