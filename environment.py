@@ -15,6 +15,9 @@ class Env():
     gotoCounter = 0
     in_func = []
     max_offset = []
+    # obj props
+    properties: List[Dict[str, int]] = []
+
 
     def startFunc(self, name:str, args:List[str]):
         self.in_func.append(name)
@@ -30,6 +33,8 @@ class Env():
         self.tempEnvs.pop()
         self.tempConsts.pop()
 
+    def startObj(self):
+        self.properties.append({})
     
     def deklLocalVar(self, varname:str, const = False):
         if varname in self.usedGlobalVarNames:

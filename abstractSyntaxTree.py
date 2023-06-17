@@ -13,6 +13,7 @@ TEMP_PTR = "$t2"
 SAVE_PTR = "$s2"
 NOT_SAVE = "$s3"
 FUNC_PTR = "$s4"
+SELF = "$s5"
 
 TEMP = "$t0"
 TEMP_ITER = "$t1"

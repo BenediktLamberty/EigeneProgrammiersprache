@@ -31,10 +31,12 @@ def from_to_file():
     file.close()
 
 def test():
-    a = [1, 2, 3]
-    print( a[-1])
+    a = "jlhkasdjf"
+    b = "jlhk"+"asdjf"
+    print(str(hash(a) % 2_147_483_647))
+    print(str(hash(b) % 2_147_483_647))
 
 if __name__ == "__main__":
     #from_to_file()
-    #test()
-    from_file()
+    test()
+    #from_file()

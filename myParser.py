@@ -342,8 +342,6 @@ class Parser:
             else:
                 properties.append(self.parse_property())
         self.eat()
-        if len(constructors) == 0:
-            constructors.append(Constructor(func=FunctionDeclaration(name=None, parameters=[], body=[])))
         return ClassExpr(extends=extends, properties=properties, constructors=constructors)
 
     def parse_property(self) -> Property:
