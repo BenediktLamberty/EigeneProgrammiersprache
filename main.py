@@ -2,6 +2,9 @@ import myParser
 from functools import reduce
 from environment import Env
 
+file_in = "myCode.ms"
+file_out = "mips1.asm"
+
 def main():
     parser = myParser.Parser()
 
@@ -15,18 +18,20 @@ def main():
 def from_file():
     parser = myParser.Parser()
     lines = ""
-    with open("bsp.txt") as file:
-        lines = reduce(lambda a, b: a + b, file.readlines())
+    try:
+        with open(file_in) as file:
+            lines = reduce(lambda a, b: a + b, file.readlines())
+    except FileNotFoundError as e:
+        print(e, "Incorrect File Path")
     file.close()
     program = parser.produce_AST(lines)
-    print(program)
     return program
 
 def from_to_file():
     env = Env()
     code = from_file().generate_code(env)
     #print(code)
-    file = open("mips1.asm", "w")
+    file = open(file_out, "w")
     file.write(code)
     file.close()
 
@@ -37,6 +42,6 @@ def test():
     print(str(hash(b) % 2_147_483_647))
 
 if __name__ == "__main__":
-    #from_to_file()
-    test()
+    from_to_file()
+    #test()
     #from_file()
