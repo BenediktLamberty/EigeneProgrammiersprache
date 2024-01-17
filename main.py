@@ -36,12 +36,11 @@ def from_to_file():
     file.close()
 
 def test():
-    a = "jlhkasdjf"
-    b = "jlhk"+"asdjf"
-    print(str(hash(a) % 2_147_483_647))
-    print(str(hash(b) % 2_147_483_647))
+   print(abs(hash("prop1")))
+   print(abs(hash("prop2")))
+   print(abs(hash("prop3")))
 
 if __name__ == "__main__":
-    from_to_file()
-    #test()
+    #from_to_file()
+    test()
     #from_file()
