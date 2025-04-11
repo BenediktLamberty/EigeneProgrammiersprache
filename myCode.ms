@@ -4,3 +4,5 @@ let factorial = func: n -> {
 }
 # 7!
 output(factorial(7))
+
+
